@@ -1,9 +1,14 @@
 import streamlit as st
 
+import theme
+from ui_helpers import get_provider
+
 st.set_page_config(page_title="Methodology — Netback Calculator",
                    page_icon="📖", layout="wide")
+theme.inject()
+theme.ticker(get_provider())
 
-st.title("📖 Methodology")
+st.title("Methodology")
 st.caption("Every formula the engine uses, with its assumptions. "
            "No black box: each cost leg is a pure function with its own tests.")
 

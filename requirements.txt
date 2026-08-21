@@ -1,0 +1,3 @@
+# Installs the netback package (src/netback) plus the app dependencies
+# declared in pyproject.toml. Equivalent to `pip install -e .`.
+-e .

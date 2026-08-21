@@ -11,6 +11,7 @@ from typing import Any
 import plotly.graph_objects as go
 import streamlit as st
 
+import theme
 from netback.core.netback import compute_netback
 from netback.data.providers.static import StaticDataProvider
 from netback.models.schemas import CommodityProfile, CostInputs, NetbackResult, Route
@@ -33,6 +34,11 @@ MODE_LABELS = {
     "netback": "Netback (CIF sale price → FOB netback)",
     "landed_cost": "Landed cost (FOB price → delivered cost)",
 }
+
+# Muted categorical colours that sit on the dark surface without competing
+# with the green/red cost semantics or the amber accent.
+COST_LEG_PALETTE = ["#587FA8", "#4E9E94", "#7E76B4", "#9C8A5E", "#5C6B84"]
+SCENARIO_PALETTE = ["#5B8DBE", "#9C8AC5", "#4E9E94"]
 
 
 @st.cache_resource
@@ -171,19 +177,41 @@ def result_metric_cards(result: NetbackResult, unit: str) -> None:
                    + result.commission_cost)
     result_label = result.breakdown[-1][0]
     sign = "-" if result.mode == "netback" else "+"
+    quality_premium = result.quality_adjustment >= 0
 
-    cols = st.columns(4)
-    cols[0].metric("Base price", f"${result.base_price:,.2f}/{unit}")
-    cols[1].metric("Total voyage costs", f"${total_costs:,.2f}/{unit}",
-                   delta=f"{sign}{total_costs / result.base_price:.1%} of base",
-                   delta_color="off")
-    cols[2].metric("Quality adjustment",
-                   f"${result.quality_adjustment:+,.2f}/{unit}",
-                   delta="premium" if result.quality_adjustment >= 0 else "penalty",
-                   delta_color="normal" if result.quality_adjustment >= 0 else "inverse")
-    cols[3].metric(result_label, f"${result.result_price:,.2f}/{unit}",
-                   delta=f"{result.result_price - result.base_price:+,.2f} vs base",
-                   delta_color="normal" if result.mode == "landed_cost" else "inverse")
+    theme.metric_cards([
+        {"label": "Base price", "value": f"${result.base_price:,.2f}",
+         "unit": unit},
+        {"label": "Total voyage costs", "value": f"${total_costs:,.2f}",
+         "unit": unit,
+         "delta": f"{sign}{total_costs / result.base_price:.1%} of base"},
+        {"label": "Quality adjustment",
+         "value": f"${result.quality_adjustment:+,.2f}", "unit": unit,
+         "delta": "premium" if quality_premium else "penalty",
+         "delta_kind": "pos" if quality_premium else "neg"},
+        {"label": result_label, "value": f"${result.result_price:,.2f}",
+         "unit": unit, "accent": True,
+         "delta": f"{result.result_price - result.base_price:+,.2f} vs base"},
+    ])
+
+
+def terminal_layout(fig: go.Figure, **overrides: Any) -> go.Figure:
+    """Apply the shared dark-terminal chart chrome: transparent paper,
+    hairline grid, monospace tick labels, terminal hover chips."""
+    fig.update_layout(
+        font=dict(family=theme.SANS, color=theme.TEXT, size=12),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        hoverlabel=dict(bgcolor=theme.SURFACE, bordercolor=theme.BORDER,
+                        font=dict(family=theme.MONO, color=theme.TEXT,
+                                  size=12)),
+        **overrides,
+    )
+    axis = dict(gridcolor=theme.BORDER, zerolinecolor=theme.BORDER,
+                linecolor=theme.BORDER,
+                tickfont=dict(family=theme.MONO, color=theme.MUTED, size=11))
+    fig.update_xaxes(**axis)
+    fig.update_yaxes(**axis)
+    return fig
 
 
 def waterfall_figure(result: NetbackResult, unit: str) -> go.Figure:
@@ -193,22 +221,37 @@ def waterfall_figure(result: NetbackResult, unit: str) -> go.Figure:
     values = [value for _, value in result.breakdown]
     measures = ["absolute"] + ["relative"] * (len(values) - 2) + ["total"]
 
+    # Crop the y-axis to the running total's envelope: with an axis pinned
+    # at zero the individual cost legs are a few pixels tall and unreadable.
+    running, cumulative = 0.0, []
+    for value, measure in zip(values, measures):
+        running = value if measure == "total" else running + value
+        cumulative.append(running)
+    lo, hi = min(cumulative), max(cumulative)
+    pad = (hi - lo) * 0.3 or hi * 0.05
+
+    tick_labels = [label.replace(" ", "<br>", 1) if len(label) > 12 else label
+                   for label in labels]
+
     fig = go.Figure(go.Waterfall(
-        x=labels, y=values, measure=measures,
+        x=tick_labels, y=values, measure=measures,
         text=[f"{v:+,.2f}" if m == "relative" else f"{v:,.2f}"
               for v, m in zip(values, measures)],
         textposition="outside",
-        connector={"line": {"color": "rgba(128,128,128,0.5)", "width": 1}},
-        increasing={"marker": {"color": "#2E7D32"}},
-        decreasing={"marker": {"color": "#C62828"}},
-        totals={"marker": {"color": "#1565C0"}},
+        textfont=dict(family=theme.MONO, color=theme.TEXT, size=11),
+        connector={"line": {"color": theme.BORDER, "width": 1}},
+        increasing={"marker": {"color": theme.CHART_GREEN}},
+        decreasing={"marker": {"color": theme.CHART_RED}},
+        totals={"marker": {"color": theme.CHART_TOTAL}},
     ))
-    fig.update_layout(
-        title=f"{labels[0]} → {labels[-1]} (USD/{unit})",
-        yaxis_title=f"USD/{unit}", showlegend=False,
-        margin=dict(t=60, b=40), height=480,
+    return terminal_layout(
+        fig,
+        title=dict(text=f"{labels[0]} → {labels[-1]}  ·  USD/{unit}",
+                   font=dict(family=theme.SANS, color=theme.MUTED, size=12)),
+        yaxis=dict(range=[lo - pad, hi + pad]),
+        yaxis_title=None, showlegend=False,
+        margin=dict(t=48, b=56), height=460,
     )
-    return fig
 
 
 def cost_share_figure(result: NetbackResult, unit: str) -> go.Figure:
@@ -222,7 +265,7 @@ def cost_share_figure(result: NetbackResult, unit: str) -> go.Figure:
         ("Commission", result.commission_cost),
     ]
     total = sum(v for _, v in legs) or 1.0
-    palette = ["#1565C0", "#00838F", "#6A1B9A", "#EF6C00", "#546E7A"]
+    palette = COST_LEG_PALETTE
 
     fig = go.Figure()
     for (label, value), color in zip(legs, palette):
@@ -232,14 +275,17 @@ def cost_share_figure(result: NetbackResult, unit: str) -> go.Figure:
             hovertemplate=(f"{label}: ${value:,.2f}/{unit} "
                            f"({value / total:.1%})<extra></extra>"),
         ))
-    fig.update_layout(
-        barmode="stack", height=140,
-        xaxis=dict(tickformat=".0%", range=[0, 1], title=None),
-        yaxis=dict(showticklabels=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.1),
-        margin=dict(t=10, b=30, l=10, r=10),
+    return terminal_layout(
+        fig,
+        barmode="stack", height=120,
+        xaxis=dict(range=[0, 1], title=None, showticklabels=False,
+                   showgrid=False),
+        yaxis=dict(showticklabels=False, showgrid=False),
+        legend=dict(orientation="h", yanchor="bottom", y=1.15,
+                    traceorder="normal",
+                    font=dict(size=11, color=theme.MUTED)),
+        margin=dict(t=10, b=12, l=10, r=10),
     )
-    return fig
 
 
 def compute(inputs: CostInputs, route: Route, profile: CommodityProfile,

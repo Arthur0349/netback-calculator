@@ -1,45 +1,63 @@
 import streamlit as st
 
-st.set_page_config(page_title="Netback Calculator", page_icon="🚢", layout="wide")
+import theme
+from ui_helpers import get_provider
 
-st.title("🚢 Netback Calculator")
-st.caption("Freight-rate netback and landed-cost engine for bulk and tanker trades")
+st.set_page_config(page_title="Netback Calculator", page_icon="🚢",
+                   layout="wide")
+theme.inject()
+theme.ticker(get_provider())
 
-st.markdown("""
-Given a delivered sale price (CIF/DES/DAP), this tool works **backward** to the
-FOB netback at the load port by deducting freight, insurance, financing cost,
-port fees and quality adjustments — or **forward** from a FOB price to the
-landed cost for a buyer. Both directions run through the same cost engine;
-only the sign of the cost legs flips.
+st.title("Netback Calculator")
+st.caption("FOB netback and landed-cost engine for bulk and tanker trades")
 
-The engine is **commodity-agnostic**: each commodity is a configuration
-profile (unit, benchmark spec, quality-adjustment formula) injected into the
-engine, not hard-coded logic. Reference data ships for iron ore and crude oil,
-with a spodumene (lithium) profile included as a config-only skeleton to show
-that adding a commodity needs no code change.
-""")
+st.markdown(
+    "From a delivered sale price (CIF/DES/DAP), work **backward** to the FOB "
+    "netback at the load port: freight, insurance, financing, port fees and "
+    "quality adjustments, deducted leg by leg. Or run the same engine "
+    "**forward**, FOB price to delivered cost. One engine, two directions — "
+    "only the sign of the cost legs flips."
+)
+
+st.divider()
 
 col1, col2 = st.columns(2)
-with col1:
-    st.subheader("Netback (backward)")
-    st.markdown("CIF sale price → deductions → **FOB netback**. "
-                "The trader's calculation: compare several outlets and pick "
-                "the most profitable one.")
-with col2:
-    st.subheader("Landed cost (forward)")
-    st.markdown("FOB price → additions → **delivered cost**. "
-                "The buyer's calculation: compare several origins on an "
-                "equal delivered basis.")
+col1.markdown(theme.panel(
+    "Netback · backward",
+    "CIF sale price → deductions → <b>FOB netback</b>.<br>"
+    "The trader's calculation: compare several outlets, "
+    "pick the most profitable one.",
+), unsafe_allow_html=True)
+col2.markdown(theme.panel(
+    "Landed cost · forward",
+    "FOB price → additions → <b>delivered cost</b>.<br>"
+    "The buyer's calculation: compare several origins "
+    "on an equal delivered basis.",
+), unsafe_allow_html=True)
 
 st.divider()
-st.page_link("pages/1_Calculator.py", label="**Calculator** — single-voyage "
-             "netback / landed cost with waterfall breakdown", icon="🧮")
-st.page_link("pages/2_Scenario_comparison.py", label="**Scenario comparison** — "
-             "compare routes or cargoes side by side", icon="⚖️")
-st.page_link("pages/3_Methodology.py", label="**Methodology** — formulas and "
-             "assumptions behind every cost leg", icon="📖")
+
+st.markdown(
+    "The engine is **commodity-agnostic**: each commodity is a configuration "
+    "profile (unit, benchmark spec, quality-adjustment formula) injected into "
+    "the engine, not hard-coded logic. Iron ore and crude oil ship fully "
+    "built; spodumene is a config-only skeleton proving that a new commodity "
+    "is a data edit, not a code change."
+)
 
 st.divider()
-st.caption("Reference prices and freight rates are static, order-of-magnitude "
-           "indicative figures. Live market data is a planned extension behind "
-           "the same provider interface.")
+
+st.page_link("pages/1_Calculator.py",
+             label="**Calculator** — single-voyage netback / landed cost "
+                   "with waterfall breakdown")
+st.page_link("pages/2_Scenario_comparison.py",
+             label="**Scenario comparison** — routes or cargoes side by "
+                   "side, the arbitrage view")
+st.page_link("pages/3_Methodology.py",
+             label="**Methodology** — formulas and assumptions behind every "
+                   "cost leg")
+
+st.divider()
+st.caption("Reference prices and freight rates are static, "
+           "order-of-magnitude indicative figures. Live market data is a "
+           "planned extension behind the same provider interface.")

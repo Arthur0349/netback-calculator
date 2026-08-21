@@ -1,15 +1,18 @@
 import plotly.graph_objects as go
 import streamlit as st
 
-from ui_helpers import (MODE_LABELS, commodity_selectbox, compute,
-                        get_provider, seed_inputs)
+import theme
+from ui_helpers import (MODE_LABELS, SCENARIO_PALETTE, commodity_selectbox,
+                        compute, get_provider, seed_inputs, terminal_layout)
 
 st.set_page_config(page_title="Scenario comparison — Netback Calculator",
                    page_icon="⚖️", layout="wide")
+theme.inject()
 
 provider = get_provider()
+theme.ticker(provider)
 
-st.title("⚖️ Scenario comparison")
+st.title("Scenario comparison")
 st.caption("Compare routes or cargoes side by side on the resulting netback — "
            "the arbitrage view a trader uses to pick between outlets.")
 
@@ -55,10 +58,12 @@ for i, col in enumerate(columns):
         result = compute(inputs, route, profile, mode)
 
         result_label = result.breakdown[-1][0]
-        st.metric(f"{result_label} (USD/{profile.unit})",
-                  f"${result.result_price:,.2f}",
-                  delta=f"{result.result_price - result.base_price:+,.2f} vs base",
-                  delta_color="normal" if mode == "landed_cost" else "inverse")
+        theme.metric_cards([
+            {"label": result_label, "value": f"${result.result_price:,.2f}",
+             "unit": profile.unit, "accent": True,
+             "delta": (f"{result.result_price - result.base_price:+,.2f} "
+                       "vs base")},
+        ])
         scenarios.append((f"{chr(65 + i)} — {profile.name}", profile, result))
 
 if len(scenarios) >= 2:
@@ -68,21 +73,22 @@ if len(scenarios) >= 2:
     components = ["Freight", "Insurance", "Financing", "Port fees",
                   "Commission", "Quality adj."]
     fig = go.Figure()
-    for name, _profile, result in scenarios:
+    # Values on hover only: printed labels overlap once 3 scenarios share
+    # a component group.
+    for (name, _profile, result), color in zip(scenarios, SCENARIO_PALETTE):
         fig.add_trace(go.Bar(
             name=name, x=components,
             y=[result.freight_cost, result.insurance_cost,
                result.financing_cost, result.port_fees_total,
                result.commission_cost, result.quality_adjustment],
-            text=[f"{v:,.2f}" for v in
-                  (result.freight_cost, result.insurance_cost,
-                   result.financing_cost, result.port_fees_total,
-                   result.commission_cost, result.quality_adjustment)],
-            textposition="outside",
+            marker_color=color,
+            hovertemplate="%{y:,.2f} USD/unit<extra>%{fullData.name}</extra>",
         ))
-    fig.update_layout(barmode="group", yaxis_title="USD/unit", height=420,
-                      legend=dict(orientation="h", yanchor="bottom", y=1.05),
-                      margin=dict(t=40, b=40))
+    terminal_layout(fig, barmode="group", bargroupgap=0.12,
+                    yaxis_title="USD/unit", height=420,
+                    legend=dict(orientation="h", yanchor="bottom", y=1.05,
+                                font=dict(size=11)),
+                    margin=dict(t=40, b=40))
     st.plotly_chart(fig, width="stretch")
 
     st.caption("Units differ across commodities (dmt vs bbl) — compare "
