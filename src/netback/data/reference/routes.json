@@ -1,0 +1,47 @@
+{
+  "_notes": "Distances from standard sea-distance tables, transit at typical laden service speed for the vessel class (Capesize ~13.5 kn, VLCC/Suezmax ~12.5 kn) plus canal/waiting allowance.",
+  "morebaya_qingdao": {
+    "commodity": "iron_ore",
+    "route": {
+      "load_port": "Morebaya",
+      "discharge_port": "Qingdao",
+      "distance_nm": 11800,
+      "transit_days": 34,
+      "vessel_type": "Capesize"
+    },
+    "_sources": "West Africa -> North China via Cape of Good Hope / Sunda Strait"
+  },
+  "morebaya_rotterdam": {
+    "commodity": "iron_ore",
+    "route": {
+      "load_port": "Morebaya",
+      "discharge_port": "Rotterdam",
+      "distance_nm": 2900,
+      "transit_days": 10,
+      "vessel_type": "Capesize"
+    },
+    "_sources": "Guinea -> NW Europe direct Atlantic leg"
+  },
+  "ras_tanura_ningbo": {
+    "commodity": "crude_oil",
+    "route": {
+      "load_port": "Ras Tanura",
+      "discharge_port": "Ningbo",
+      "distance_nm": 5850,
+      "transit_days": 22,
+      "vessel_type": "VLCC"
+    },
+    "_sources": "Arabian Gulf -> East China, TD3C-style voyage"
+  },
+  "ras_tanura_rotterdam": {
+    "commodity": "crude_oil",
+    "route": {
+      "load_port": "Ras Tanura",
+      "discharge_port": "Rotterdam",
+      "distance_nm": 6400,
+      "transit_days": 24,
+      "vessel_type": "Suezmax"
+    },
+    "_sources": "Arabian Gulf -> NW Europe via Suez (laden transit)"
+  }
+}

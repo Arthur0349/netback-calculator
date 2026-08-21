@@ -1,0 +1,33 @@
+{
+  "_notes": "Indicative handling fees in $/unit of the commodity shipped through the port (USD/dmt at dry-bulk ports, USD/bbl at crude terminals). Rounded figures consistent with public port-tariff orders of magnitude.",
+  "Morebaya": {
+    "country": "Guinea",
+    "load_fee_per_unit": 2.6,
+    "discharge_fee_per_unit": 2.6,
+    "_sources": "Simandou export terminal, Forecariah/Morebaya; new-build transhipment loading, dry bulk USD/dmt"
+  },
+  "Qingdao": {
+    "country": "China",
+    "load_fee_per_unit": 1.9,
+    "discharge_fee_per_unit": 1.9,
+    "_sources": "Main China iron ore discharge hub, dry bulk USD/dmt"
+  },
+  "Rotterdam": {
+    "country": "Netherlands",
+    "load_fee_per_unit": 2.1,
+    "discharge_fee_per_unit": 2.1,
+    "_sources": "EMO dry bulk terminal orders of magnitude, USD/dmt"
+  },
+  "Ras Tanura": {
+    "country": "Saudi Arabia",
+    "load_fee_per_unit": 0.18,
+    "discharge_fee_per_unit": 0.18,
+    "_sources": "Gulf crude loading terminal, USD/bbl"
+  },
+  "Ningbo": {
+    "country": "China",
+    "load_fee_per_unit": 0.14,
+    "discharge_fee_per_unit": 0.14,
+    "_sources": "Ningbo-Zhoushan crude discharge, USD/bbl"
+  }
+}

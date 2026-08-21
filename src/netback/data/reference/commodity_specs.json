@@ -1,0 +1,60 @@
+{
+  "_notes": "Indicative reference data for the demo. Figures are order-of-magnitude realistic (mid-2020s public index levels: Platts IODEX / Argus crude assessments / Fastmarkets spodumene), chosen for internal consistency, not day-accuracy. Live assessments are what the LiveDataProvider will supply later. '_' keys are documentation, ignored by the loader.",
+  "iron_ore": {
+    "profile": {
+      "name": "Iron ore fines",
+      "unit": "dmt",
+      "benchmark_spec": {"Fe": 65.0, "SiO2": 4.0, "moisture": 8.0},
+      "quality_adjustment_fn": "iron_ore_linear",
+      "quality_params": {
+        "price_per_unit_fe": 1.9,
+        "penalty_per_unit_silica": 1.2,
+        "penalty_per_unit_moisture": 0.6
+      }
+    },
+    "benchmark_price": 108.0,
+    "benchmark_price_basis": "USD/dmt CIF Qingdao, IODEX-style 65% Fe fines index (Simandou-grade high-Fe product)",
+    "defaults": {
+      "quantity": 180000,
+      "insurance_rate_pct": 0.35,
+      "financing_rate_annual_pct": 6.5,
+      "payment_terms_days": 30,
+      "commission_pct": 0.5,
+      "actual_quality": {"Fe": 65.5, "SiO2": 3.4, "moisture": 8.5}
+    },
+    "_sources": "Benchmark level ~Platts IODEX 65% Fe CFR China; Fe/SiO2/moisture differentials in line with published Platts per-1%-Fe spreads. Default cargo: Capesize stem ex Morebaya (Simandou export terminal, Guinea)."
+  },
+  "crude_oil": {
+    "profile": {
+      "name": "Crude oil",
+      "unit": "bbl",
+      "benchmark_spec": {"API": 32.0, "sulfur_pct": 1.8},
+      "quality_adjustment_fn": "crude_api_sulfur",
+      "quality_params": {
+        "premium_per_api_degree": 0.3,
+        "penalty_per_pct_sulfur": 0.9
+      }
+    },
+    "benchmark_price": 78.0,
+    "benchmark_price_basis": "USD/bbl delivered East Asia, medium-sour Gulf benchmark (Dubai/Oman-style)",
+    "defaults": {
+      "quantity": 2000000,
+      "insurance_rate_pct": 0.25,
+      "financing_rate_annual_pct": 6.0,
+      "payment_terms_days": 30,
+      "commission_pct": 0.25,
+      "actual_quality": {"API": 34.2, "sulfur_pct": 1.2}
+    },
+    "_sources": "Benchmark level ~Dubai swaps; API/sulfur escalators in line with typical official-selling-price adjustment grids. Default cargo: VLCC stem ex Ras Tanura."
+  },
+  "lithium_spodumene": {
+    "profile": {
+      "name": "Spodumene concentrate",
+      "unit": "dmt",
+      "benchmark_spec": {"Li2O": 6.0},
+      "quality_adjustment_fn": "spodumene_linear",
+      "quality_params": {"price_per_unit_li2o": 145.0}
+    },
+    "_sources": "Config skeleton only: a valid CommodityProfile reusing the already-registered spodumene_linear formula, with no benchmark price, routes, freight or defaults yet. Proves a new commodity is pure configuration — no code change."
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "_notes": "Indicative spot freight in $/unit shipped (USD/dmt dry bulk, USD/bbl tanker). Levels consistent with Baltic Exchange dry indices and Worldscale-derived tanker economics; the Worldscale/vessel-size complexity deliberately stays in this table, not in the core engine.",
+  "morebaya_qingdao": {
+    "freight_rate_per_unit": 22.5,
+    "basis": "USD/dmt, Capesize West Africa -> China (C3 Tubarao->Qingdao proxy plus West Africa premium)"
+  },
+  "morebaya_rotterdam": {
+    "freight_rate_per_unit": 9.5,
+    "basis": "USD/dmt, Capesize Guinea -> NW Europe short Atlantic leg"
+  },
+  "ras_tanura_ningbo": {
+    "freight_rate_per_unit": 1.9,
+    "basis": "USD/bbl, VLCC AG -> China (TD3C at mid-cycle Worldscale, ~2m bbl stem)"
+  },
+  "ras_tanura_rotterdam": {
+    "freight_rate_per_unit": 2.6,
+    "basis": "USD/bbl, Suezmax AG -> NW Europe via Suez incl. canal dues"
+  }
+}

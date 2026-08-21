@@ -1,0 +1,57 @@
+{
+  "_comment": "Hand-computed reference cases for the integration test. All prices in USD per dmt. Bauxite Guinea -> China, Capesize. Expected values verified by hand to 2 dp.",
+  "profile": {
+    "name": "Bauxite",
+    "unit": "dmt",
+    "benchmark_spec": {"Al2O3": 49.0, "SiO2": 5.0},
+    "quality_adjustment_fn": "bauxite_linear",
+    "quality_params": {"price_per_unit_alumina": 1.5, "penalty_per_unit_silica": 2.0}
+  },
+  "route": {
+    "load_port": "Kamsar",
+    "discharge_port": "Yantai",
+    "distance_nm": 11000,
+    "transit_days": 35,
+    "vessel_type": "Capesize"
+  },
+  "netback_case": {
+    "inputs": {
+      "quantity": 55000,
+      "price_basis": 75.0,
+      "freight_rate_per_unit": 22.0,
+      "insurance_rate_pct": 0.4,
+      "financing_rate_annual_pct": 6.0,
+      "payment_terms_days": 30,
+      "load_port_fee_per_unit": 2.5,
+      "discharge_port_fee_per_unit": 3.0,
+      "actual_quality": {"Al2O3": 47.0, "SiO2": 6.0},
+      "commission_pct": 0.5
+    },
+    "expected": {
+      "freight_cost": 22.0,
+      "insurance_cost": 0.4268,
+      "financing_cost": 0.8014,
+      "port_fees_total": 5.5,
+      "commission_cost": 0.375,
+      "quality_adjustment": -5.0,
+      "result_price": 40.9
+    }
+  },
+  "landed_cost_case": {
+    "inputs": {
+      "quantity": 55000,
+      "price_basis": 60.0,
+      "freight_rate_per_unit": 22.0,
+      "insurance_rate_pct": 0.4,
+      "financing_rate_annual_pct": 6.0,
+      "payment_terms_days": 30,
+      "load_port_fee_per_unit": 2.5,
+      "discharge_port_fee_per_unit": 3.0,
+      "actual_quality": {"Al2O3": 47.0, "SiO2": 6.0},
+      "commission_pct": 0.5
+    },
+    "expected": {
+      "result_price": 83.8
+    }
+  }
+}
