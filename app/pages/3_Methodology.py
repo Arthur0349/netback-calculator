@@ -49,13 +49,11 @@ $$I = (P + F) \times 1.10 \times \frac{r_{ins}}{100}$$
 Cost of the capital tied up during transit plus the buyer/supplier credit
 period:
 
-$$C_{fin} = P \times \frac{r_{annual}}{100 \times 365} \times
-(\text{transit days} + \text{payment terms days})$$
+$$C_{fin} = P \times \frac{r_{annual}}{100 \times 365} \times (\text{transit days} + \text{payment terms days})$$
 
 ## Port fees
 
-$$C_{port} = \text{load port fee} + \text{discharge port fee} \quad
-\text{(USD/unit)}$$
+$$C_{port} = \text{load port fee} + \text{discharge port fee} \quad \text{(USD/unit)}$$
 
 ## Commission
 
