@@ -14,8 +14,17 @@ This is the calculation a physical trader runs to compare outlets, and a buyer
 runs to compare origins. The waterfall on the Calculator page is the natural
 picture of a netback; the Scenario comparison page is the arbitrage view.
 
-> **Screenshots** — _coming soon: Calculator waterfall, scenario comparison,
-> ticker strip._
+## Screenshots
+
+**Home**
+![Home page](docs/screenshots/home.png)
+
+**Calculator — waterfall breakdown**
+![Calculator page top](docs/screenshots/calculator.png)
+![Calculator page cost structure and full breakdown table](docs/screenshots/calculator2.png)
+
+**Scenario comparison — the arbitrage view**
+![Scenario comparison page](docs/screenshots/scenariocomparison.png)
 
 ## Config-driven by construction
 
