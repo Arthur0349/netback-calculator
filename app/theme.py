@@ -37,7 +37,51 @@ header[data-testid="stHeader"] {{
     background: transparent;
 }}
 .block-container {{
-    padding-top: 2.6rem;
+    padding-top: 2.2rem;
+    padding-bottom: 3rem;
+    max-width: 1280px;
+}}
+[data-testid="stSidebar"] [data-testid="stExpander"] details {{
+    border-color: {BORDER};
+    background: transparent;
+}}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p {{
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: {MUTED};
+}}
+[data-testid="stSidebar"] label p {{
+    font-size: 0.8rem;
+}}
+[data-testid="stCaptionContainer"] p {{
+    line-height: 1.5;
+}}
+.nb-sub {{
+    font-family: {MONO};
+    font-size: 0.78rem;
+    color: {MUTED};
+    margin: -0.5rem 0 0.9rem;
+    letter-spacing: 0.01em;
+}}
+.nb-sub b {{
+    color: {AMBER};
+    font-weight: 500;
+}}
+
+/* One waterfall per viewport: vertical on desktop, horizontal on phones. */
+.st-key-nb_wide {{ display: block; }}
+.st-key-nb_narrow {{ display: none; }}
+@media (max-width: 700px) {{
+    .st-key-nb_wide {{ display: none; }}
+    .st-key-nb_narrow {{ display: block; }}
+    .block-container {{ padding-left: 1rem; padding-right: 1rem; }}
+    table.nb-table {{ font-size: 0.72rem; }}
+    table.nb-table th, table.nb-table td {{ padding: 0.3rem 0.4rem; }}
+}}
+.nb-table-wrap {{
+    overflow-x: auto;
 }}
 
 h1 {{
@@ -70,8 +114,9 @@ hr {{
 .nb-ticker {{
     display: flex;
     flex-wrap: nowrap;
-    overflow: hidden;
-    gap: 1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 1.4rem;
     align-items: baseline;
     background: #0D1424;
     border: 1px solid {BORDER};
@@ -84,9 +129,14 @@ hr {{
     letter-spacing: 0.03em;
     white-space: nowrap;
 }}
+.nb-ticker::-webkit-scrollbar {{ display: none; }}
 .nb-ticker .nb-tick-tag {{
     color: {MUTED};
     font-weight: 600;
+}}
+.nb-ticker .nb-tick-unit {{
+    color: {MUTED};
+    padding-left: 0.3rem;
 }}
 .nb-ticker .nb-tick-label {{
     color: {MUTED};
@@ -180,11 +230,26 @@ table.nb-table th.nb-num, table.nb-table td.nb-num {{
 }}
 table.nb-table tr:last-child td {{
     border-bottom: none;
+}}
+table.nb-table tr.nb-hl td {{
     color: {AMBER};
     font-weight: 500;
 }}
+table.nb-table td.nb-pos {{ color: {DELTA_GREEN}; }}
+table.nb-table td.nb-neg {{ color: {DELTA_RED}; }}
 
 /* ---- Text panels (Home) -------------------------------------------- */
+a.nb-panel {{
+    display: block;
+    text-decoration: none !important;
+    transition: border-color 0.15s ease;
+}}
+a.nb-panel span {{
+    display: block;
+}}
+a.nb-panel:hover {{
+    border-color: rgba(212, 162, 76, 0.6);
+}}
 .nb-panel {{
     background: {SURFACE};
     border: 1px solid {BORDER};
@@ -222,39 +287,32 @@ def inject() -> None:
 
 
 def ticker(provider) -> None:
-    """Thin amber strip of static reference prices: every benchmark price
-    the provider knows, then indicative freight per route."""
-    items: list[tuple[str, str, str]] = []
+    """Thin amber strip of the static reference prices, with their unit and
+    the date of the reference data. Scrolls sideways on narrow screens."""
+    spans = []
     for commodity in provider.list_commodities():
         try:
             price = provider.get_benchmark_price(commodity)
         except KeyError:
             continue  # config skeleton, no reference price
         profile = provider.get_commodity_profile(commodity)
-        short_name = " ".join(profile.name.split()[:2]).upper()
-        items.append((short_name, f"{price:,.2f}/{profile.unit}",
-                      f"{profile.name} benchmark, USD/{profile.unit}"))
-        for route_id in provider.list_routes(commodity):
-            route = provider.get_route(route_id)
-            leg = (f"{route.load_port[:3]}→"
-                   f"{route.discharge_port[:3]}").upper()
-            rate = provider.get_freight_rate(route)
-            items.append((leg, f"{rate:,.2f}",
-                          f"Indicative freight {route.load_port} → "
-                          f"{route.discharge_port} ({route.vessel_type}), "
-                          f"USD/{profile.unit}"))
-
-    spans = "".join(
-        f'<span title="{html.escape(tooltip)}">'
-        f'<span class="nb-tick-label">{html.escape(label)}</span>'
-        f'<span class="nb-tick-value">{html.escape(value)}</span></span>'
-        for label, value, tooltip in items
-    )
+        spans.append(
+            f'<span title="{html.escape(profile.name)} reference price">'
+            f'<span class="nb-tick-label">{html.escape(profile.name.upper())}</span>'
+            f'<span class="nb-tick-value">{price:,.2f}</span>'
+            f'<span class="nb-tick-unit">USD/{html.escape(profile.unit)}</span></span>')
+    as_of = getattr(provider, "as_of", "")
+    tag = "STATIC REF" + (f" · {as_of.upper()}" if as_of else "")
     st.markdown(
-        f'<div class="nb-ticker"><span class="nb-tick-tag">STATIC REF</span>'
-        f"{spans}</div>",
+        f'<div class="nb-ticker"><span class="nb-tick-tag">{html.escape(tag)}</span>'
+        f'{"".join(spans)}</div>',
         unsafe_allow_html=True,
     )
+
+
+def subtitle(text_html: str) -> None:
+    """Monospace context line under a page title (trusted HTML)."""
+    st.markdown(f'<div class="nb-sub">{text_html}</div>', unsafe_allow_html=True)
 
 
 def metric_cards(cards: list[dict]) -> None:
@@ -288,26 +346,42 @@ def metric_cards(cards: list[dict]) -> None:
 
 
 def data_table(headers: list[str], rows: list[list[str]],
-               numeric_from: int = 1) -> None:
+               numeric_from: int = 1, highlight: int | None = -1,
+               signed_cols: tuple[int, ...] = ()) -> None:
     """Hairline data table: text columns left, numeric columns (index
-    ``numeric_from`` onward) right-aligned in monospace. The last row is
-    treated as the result line and picks up the amber accent."""
+    ``numeric_from`` onward) right-aligned in monospace. ``highlight`` is the
+    row index that picks up the amber accent (default: the last row, the
+    result line; ``None`` for no accent). Cells in ``signed_cols`` are
+    coloured green/red by their leading sign."""
     def cell(tag: str, i: int, value: str) -> str:
-        cls = ' class="nb-num"' if i >= numeric_from else ""
+        classes = ["nb-num"] if i >= numeric_from else []
+        if tag == "td" and i in signed_cols:
+            if value.startswith("+") and value.strip("+0.,") != "":
+                classes.append("nb-pos")
+            elif value.startswith(("-", "−")):
+                classes.append("nb-neg")
+        cls = f' class="{" ".join(classes)}"' if classes else ""
         return f"<{tag}{cls}>{html.escape(value)}</{tag}>"
 
+    hl = highlight % len(rows) if rows and highlight is not None else None
     head = "".join(cell("th", i, h) for i, h in enumerate(headers))
     body = "".join(
-        "<tr>" + "".join(cell("td", i, v) for i, v in enumerate(row)) + "</tr>"
-        for row in rows
+        f'<tr{" class=nb-hl" if r == hl else ""}>'
+        + "".join(cell("td", i, v) for i, v in enumerate(row)) + "</tr>"
+        for r, row in enumerate(rows)
     )
-    st.markdown(f'<table class="nb-table"><thead><tr>{head}</tr></thead>'
-                f"<tbody>{body}</tbody></table>", unsafe_allow_html=True)
+    st.markdown(f'<div class="nb-table-wrap"><table class="nb-table"><thead>'
+                f"<tr>{head}</tr></thead><tbody>{body}</tbody></table></div>",
+                unsafe_allow_html=True)
 
 
-def panel(title: str, body_html: str) -> str:
+def panel(title: str, body_html: str, href: str | None = None) -> str:
     """A bordered text panel (Home page). ``body_html`` is trusted HTML
-    written by us, not user input."""
+    written by us, not user input. With ``href`` the whole panel links."""
+    if href:
+        return (f'<a class="nb-panel" href="{html.escape(href)}" target="_self">'
+                f'<span class="nb-panel-title">{html.escape(title)}</span>'
+                f'<span class="nb-panel-body">{body_html}</span></a>')
     return (f'<div class="nb-panel">'
             f'<div class="nb-panel-title">{html.escape(title)}</div>'
             f'<div class="nb-panel-body">{body_html}</div></div>')

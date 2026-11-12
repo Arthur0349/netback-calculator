@@ -31,5 +31,13 @@
   "dar_es_salaam_fangchenggang": {
     "freight_rate_per_unit": 38.0,
     "basis": "USD/wmt, Supramax concentrate East Africa -> South China"
+  },
+  "kamsar_khalifa": {
+    "freight_rate_per_unit": 18.0,
+    "basis": "USD/wmt, Capesize Guinea bauxite -> Arabian Gulf"
+  },
+  "ras_tanura_sikka": {
+    "freight_rate_per_unit": 0.75,
+    "basis": "USD/bbl, Suezmax AG -> West Coast India short haul"
   }
 }

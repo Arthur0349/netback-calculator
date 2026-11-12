@@ -1,5 +1,6 @@
 {
   "_notes": "Indicative reference data for the demo. Figures are order-of-magnitude realistic (mid-2020s public index levels: Platts IODEX / Argus crude assessments / Guinea bauxite CIF China / Fastmarkets spodumene), chosen for internal consistency, not day-accuracy. Live assessments are what the LiveDataProvider will supply later. '_' keys are documentation, ignored by the loader.",
+  "_as_of": "Nov 2026",
   "iron_ore": {
     "profile": {
       "name": "Iron ore fines",

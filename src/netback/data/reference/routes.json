@@ -128,5 +128,35 @@
       },
       "_basis": "Illustrative: spot-linked Chinese terms (spot TC/RC around -USD 120 equivalent, mid-2026)"
     }
+  },
+  "kamsar_khalifa": {
+    "commodity": "bauxite",
+    "route": {
+      "load_port": "Kamsar",
+      "discharge_port": "Khalifa Port",
+      "distance_nm": 8800,
+      "transit_days": 27,
+      "vessel_type": "Capesize"
+    },
+    "_sources": "Guinea -> Abu Dhabi (Al Taweelah alumina refinery) via Cape of Good Hope",
+    "market": {
+      "price_differential": -3.0,
+      "_basis": "Illustrative: Gulf delivered discount vs CIF China index"
+    }
+  },
+  "ras_tanura_sikka": {
+    "commodity": "crude_oil",
+    "route": {
+      "load_port": "Ras Tanura",
+      "discharge_port": "Sikka",
+      "distance_nm": 1150,
+      "transit_days": 4,
+      "vessel_type": "Suezmax"
+    },
+    "_sources": "Arabian Gulf -> West Coast India (Jamnagar refining hub)",
+    "market": {
+      "price_differential": -0.6,
+      "_basis": "Illustrative: delivered West Coast India discount vs East Asia"
+    }
   }
 }

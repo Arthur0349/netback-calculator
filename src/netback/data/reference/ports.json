@@ -65,5 +65,17 @@
     "load_fee_per_unit": 3.0,
     "discharge_fee_per_unit": 3.0,
     "_sources": "Guangxi concentrate discharge, USD/dmt"
+  },
+  "Khalifa Port": {
+    "country": "United Arab Emirates",
+    "load_fee_per_unit": 2.2,
+    "discharge_fee_per_unit": 2.2,
+    "_sources": "Al Taweelah bulk berth, dry bulk USD/dmt"
+  },
+  "Sikka": {
+    "country": "India",
+    "load_fee_per_unit": 0.15,
+    "discharge_fee_per_unit": 0.15,
+    "_sources": "Jamnagar SPM crude discharge, USD/bbl"
   }
 }

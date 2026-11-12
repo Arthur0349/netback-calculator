@@ -52,6 +52,12 @@ class StaticDataProvider(PriceDataProvider):
                 f"Available: {sorted(self._specs)}"
             ) from None
 
+    @property
+    def as_of(self) -> str:
+        """Date label of the reference figures (documentation key)."""
+        raw = json.loads((self._dir / "commodity_specs.json").read_text())
+        return raw.get("_as_of", "")
+
     def list_commodities(self) -> list[str]:
         return sorted(self._specs)
 

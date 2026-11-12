@@ -72,8 +72,9 @@ def test_every_route_validates_and_is_fully_covered(provider):
     assert provider.list_routes("iron_ore") == ["morebaya_qingdao",
                                                 "morebaya_rotterdam"]
     assert provider.list_routes("crude_oil") == ["ras_tanura_ningbo",
-                                                 "ras_tanura_rotterdam"]
-    assert provider.list_routes("bauxite") == ["kamsar_yantai"]
+                                                 "ras_tanura_rotterdam",
+                                                 "ras_tanura_sikka"]
+    assert provider.list_routes("bauxite") == ["kamsar_khalifa", "kamsar_yantai"]
     assert provider.list_routes("copper_concentrate") == [
         "dar_es_salaam_fangchenggang", "lobito_huelva", "lobito_qingdao"]
     for route_id in provider.list_routes():

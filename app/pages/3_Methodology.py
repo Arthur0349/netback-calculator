@@ -3,14 +3,14 @@ import streamlit as st
 import theme
 from ui_helpers import get_provider
 
-st.set_page_config(page_title="Methodology — Netback Calculator",
-                   page_icon="📖", layout="wide")
+st.set_page_config(page_title="Methodology · Netback Calculator",
+                   page_icon="🚢", layout="wide")
 theme.inject()
 theme.ticker(get_provider())
 
 st.title("Methodology")
-st.caption("Every formula the engine uses, with its assumptions. "
-           "No black box: each cost leg is a pure function with its own tests.")
+theme.subtitle("Every formula the engine uses, with its assumptions. "
+               "Each cost leg is a pure function with its own tests.")
 
 st.markdown(r"""
 All monetary figures are expressed **per unit** of the commodity (USD/dmt,
@@ -138,6 +138,21 @@ freight and port costs, and ranked on FOB netback.
   $\text{cushion} = NB_{1} - NB_{2}$. For a freight move on a wet-quoted
   route, the break-even freight rise is $\text{cushion} \times (1 - m/100)$
   USD/wmt.
+
+## Sensitivity and breakeven
+
+**Tornado.** Each driver is shocked one at a time, down and up, everything
+else held: ±10 % on prices, freight, financing rate, transit time and port
+fees; ±1 point on the main grade and on moisture; ±USD 50/dmt on the TC.
+Bars are the change in the result, sorted by swing.
+
+**Deal check.** With a FOB purchase cost $C$ (netback mode):
+
+$$\text{margin} = NB - C \qquad \text{return on capital} = \frac{NB - C}{C} \times \frac{365}{\text{transit} + \text{payment days}}$$
+
+**Breakevens.** The result is linear in freight and in price, so the
+breakeven is solved exactly from two evaluations: the freight (or sale
+price, or metal price) at which the margin is zero.
 
 ## Assumptions & limits
 

@@ -10,3 +10,9 @@ showWidgetBorder = true
 baseRadius = "0.25rem"
 font = "IBM Plex Sans, sans-serif"
 codeFont = "IBM Plex Mono, monospace"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

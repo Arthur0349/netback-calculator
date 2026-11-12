@@ -150,3 +150,17 @@ def compute_concentrate_netback(inputs: CostInputs, route: Route,
     priced = inputs.model_copy(update={"price_basis": valuation.net_value})
     return compute_netback(priced, route, profile, mode="netback",
                            price_build_up=valuation.build_up)
+
+
+def compute_result(inputs: CostInputs, route: Route, profile: CommodityProfile,
+                   mode: Literal["netback", "landed_cost"] = "netback",
+                   metal_prices: dict[str, float] | None = None) -> NetbackResult:
+    """Single entry point: concentrates are valued from their assays (netback
+    mode only), everything else runs on ``inputs.price_basis``."""
+    if profile.concentrate_terms is not None:
+        if mode != "netback":
+            raise ValueError("Concentrates are valued from their assays: "
+                             "netback mode only")
+        return compute_concentrate_netback(inputs, route, profile,
+                                           metal_prices or {})
+    return compute_netback(inputs, route, profile, mode=mode)

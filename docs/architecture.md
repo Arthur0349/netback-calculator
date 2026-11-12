@@ -1,3 +1,5 @@
+> Note : brief de conception d'origine (v1, août 2026). Le code a depuis évolué (Incoterms, fret humide/sec, concentrés, arbitrage, sensibilités, export PDF) ; le README et la page Methodology font foi.
+
 # Netback Calculator — Architecture technique
 
 **Objectif du document** : brief de conception complet, à donner tel quel (ou par sections) à Claude Fable 5 pour exécuter le build. Rien ici ne nécessite de données de marché live ni de décision de recrutement finale : c'est un moteur de calcul et une app de démonstration, conçus pour être crédibles techniquement et extensibles.

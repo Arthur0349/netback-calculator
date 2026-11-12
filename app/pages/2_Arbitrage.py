@@ -5,76 +5,85 @@ import streamlit as st
 import theme
 from netback.core.arbitrage import rank_outlets
 from netback.models.schemas import DELIVERY_TERM_LEGS, CostInputs
-from ui_helpers import (commodity_selectbox, compute, freight_unit, get_provider,
-                        metal_price_inputs, quality_inputs, route_label,
-                        seed_inputs, terminal_layout)
+from ui_helpers import (NEUTRAL_BAR, chart, commodity_selectbox, compute,
+                        freight_unit, get_provider, metal_price_inputs, money,
+                        quality_inputs, route_label, seed_inputs,
+                        terminal_layout)
 
-st.set_page_config(page_title="Arbitrage — Netback Calculator",
-                   page_icon="🧭", layout="wide")
+st.set_page_config(page_title="Arbitrage · Netback Calculator",
+                   page_icon="🚢", layout="wide")
 theme.inject()
 
 provider = get_provider()
 theme.ticker(provider)
 
-st.title("Arbitrage matrix")
-st.caption("One cargo, every outlet: each destination's own price or smelter "
-           "terms, freight and port costs, netted back to FOB and ranked. "
-           "The question a trader asks before fixing a ship: where does this "
-           "cargo earn the most at the load port?")
+ALL = "All load ports"
 
-ALL = "All origins"
+# --- cargo (sidebar) -------------------------------------------------------------
 
 with st.sidebar:
-    st.header("Cargo")
     commodity = commodity_selectbox(provider, st, key="arb_commodity")
     profile = provider.get_commodity_profile(commodity)
     is_concentrate = profile.concentrate_terms is not None
     route_ids = provider.list_routes(commodity)
 
-    if not route_ids:
-        st.warning("No reference routes for this commodity yet.")
-        st.stop()
+if not route_ids:
+    st.title("Arbitrage matrix")
+    st.info(f"{profile.name} is a configuration skeleton: it has no reference "
+            "outlets to rank yet. Price a single voyage with manual inputs on "
+            "the Calculator page.")
+    st.stop()
 
+with st.sidebar:
     by_origin: dict[str, list[str]] = {}
     for rid in route_ids:
         by_origin.setdefault(provider.get_route(rid).load_port, []).append(rid)
-    origins = sorted(by_origin, key=lambda o: -len(by_origin[o]))
-    origin = st.selectbox("Load port", origins + [ALL], key=f"arb_origin_{commodity}")
+    origins = sorted(by_origin, key=lambda o: (-len(by_origin[o]), o))
+    choices = ([ALL] + origins) if len(origins) > 1 else origins
+    origin = st.selectbox("Load port", choices, key=f"arb_origin_{commodity}")
     shown = route_ids if origin == ALL else by_origin[origin]
 
     k = f"arb_{commodity}_"
     seed = seed_inputs(provider, commodity, shown[0])
-    quantity = st.number_input(f"Quantity ({profile.unit})", min_value=1.0,
-                               value=float(seed["quantity"]), step=1000.0,
-                               key=f"{k}qty")
-    insurance = st.number_input("Insurance rate (% of insured value)", min_value=0.0,
-                                value=float(seed["insurance_rate_pct"]), step=0.05,
-                                format="%.2f", key=f"{k}ins")
-    financing = st.number_input("Financing rate (annual %)", min_value=0.0,
-                                value=float(seed["financing_rate_annual_pct"]),
-                                step=0.25, format="%.2f", key=f"{k}fin")
-    terms_days = st.number_input("Payment terms (days)", min_value=0.0,
-                                 value=float(seed["payment_terms_days"]), step=5.0,
-                                 key=f"{k}terms")
-    commission = st.number_input("Commission (%)", min_value=0.0,
-                                 value=float(seed["commission_pct"]), step=0.05,
-                                 format="%.2f", key=f"{k}comm")
-    actual_quality = quality_inputs(profile, seed, st, key_prefix=k)
-    metal_prices = (metal_price_inputs(profile, provider.get_metal_prices(commodity),
-                                       st, key_prefix=k)
-                    if is_concentrate else None)
+    cargo = st.expander("Cargo", expanded=True)
+    quantity = cargo.number_input(f"Quantity ({profile.unit})", min_value=1.0,
+                                  value=float(seed["quantity"]), step=1000.0,
+                                  format="%.0f", key=f"{k}qty")
+    actual_quality = quality_inputs(profile, seed, cargo, key_prefix=k)
 
-# --- per-outlet terms, editable -----------------------------------------------
+    metal_prices = None
+    if is_concentrate:
+        metal_prices = metal_price_inputs(
+            profile, provider.get_metal_prices(commodity),
+            st.expander("Metal prices", expanded=True), key_prefix=k)
 
-st.subheader("Outlets")
-st.caption("Defaults come from the reference data; edit any cell. "
-           + ("TC in USD/dmt (negative = smelter pays), RC in USD per payable "
-              "lb for base metals."
-              if is_concentrate else
-              f"Delivered price in USD/{profile.unit} on the outlet's term."))
+    costs = st.expander("Common cost assumptions", expanded=False)
+    insurance = costs.number_input("Insurance (%)", min_value=0.0,
+                                   value=float(seed["insurance_rate_pct"]),
+                                   step=0.05, format="%.2f", key=f"{k}ins")
+    financing = costs.number_input("Financing (% p.a.)", min_value=0.0,
+                                   value=float(seed["financing_rate_annual_pct"]),
+                                   step=0.25, format="%.2f", key=f"{k}fin")
+    terms_days = costs.number_input("Payment terms (d)", min_value=0.0,
+                                    value=float(seed["payment_terms_days"]),
+                                    step=5.0, format="%.0f", key=f"{k}terms")
+    commission = costs.number_input("Commission (%)", min_value=0.0,
+                                    value=float(seed["commission_pct"]),
+                                    step=0.05, format="%.2f", key=f"{k}comm")
+
+unit = profile.unit
+f_unit = freight_unit(profile)
+
+st.title("Arbitrage matrix")
+theme.subtitle(f"<b>{profile.name}</b> · {quantity:,.0f} {unit} · "
+               f"{len(shown)} outlet{'s' if len(shown) > 1 else ''} · "
+               "each netted back to FOB and ranked")
+
+# --- per-outlet terms, editable ------------------------------------------------
 
 pct_payables = ([p for p in profile.concentrate_terms.payables if p.unit == "pct"]
                 if is_concentrate else [])
+freight_col = f"Freight USD/{f_unit}"
 rows = []
 for rid in shown:
     route = provider.get_route(rid)
@@ -88,25 +97,37 @@ for rid in shown:
                 row[f"RC {p.element}"] = p.refining_charge
     else:
         row["Delivered price"] = defaults.price_basis
-    row[f"Freight (USD/{freight_unit(profile)})"] = defaults.freight_rate_per_unit
+    row[freight_col] = defaults.freight_rate_per_unit
     row["Load fee"] = defaults.load_port_fee_per_unit
     row["Discharge fee"] = defaults.discharge_port_fee_per_unit
     rows.append(row)
 
+two_dp = st.column_config.NumberColumn(format="%.2f", min_value=0.0)
 edited = st.data_editor(
     pd.DataFrame(rows), hide_index=True, width="stretch",
     key=f"arb_editor_{commodity}_{origin}", disabled=["Outlet"],
     column_config={
+        "Outlet": st.column_config.TextColumn(width="medium"),
         "Term": st.column_config.SelectboxColumn(
-            options=list(DELIVERY_TERM_LEGS), required=True),
-        **{c: st.column_config.NumberColumn(format="%.3f")
-           for c in [f"RC {p.element}" for p in pct_payables]},
+            options=list(DELIVERY_TERM_LEGS), required=True, width="small",
+            help="Incoterm of the delivered price."),
+        "Delivered price": st.column_config.NumberColumn(
+            format="%.2f", min_value=0.01, help=f"USD/{unit} on the outlet's term."),
+        "TC": st.column_config.NumberColumn(
+            format="%.2f", help=f"USD/{unit}. Negative = the smelter pays."),
+        **{f"RC {p.element}": st.column_config.NumberColumn(
+               format="%.3f", help="USD per payable lb.") for p in pct_payables},
+        freight_col: two_dp, "Load fee": two_dp, "Discharge fee": two_dp,
     },
 )
+st.caption("Every cell is editable: overwrite the reference figures with "
+           "your own quotes and the ranking updates.")
 
 # --- compute and rank -----------------------------------------------------------
 
-results = {}
+results, moisture_factor = {}, 1.0
+if profile.freight_moisture_key:
+    moisture_factor = 1 - actual_quality[profile.freight_moisture_key] / 100
 for rid, (_, row) in zip(shown, edited.iterrows()):
     route = provider.get_route(rid)
     outlet_profile = provider.get_commodity_profile(commodity, rid)
@@ -122,7 +143,7 @@ for rid, (_, row) in zip(shown, edited.iterrows()):
         price = float(row["Delivered price"])
     inputs = CostInputs(
         quantity=quantity, price_basis=max(price, 0.01),
-        freight_rate_per_unit=float(row[f"Freight (USD/{freight_unit(profile)})"]),
+        freight_rate_per_unit=float(row[freight_col]),
         insurance_rate_pct=insurance, financing_rate_annual_pct=financing,
         payment_terms_days=terms_days,
         load_port_fee_per_unit=float(row["Load fee"]),
@@ -135,62 +156,74 @@ for rid, (_, row) in zip(shown, edited.iterrows()):
 
 ranking = rank_outlets(results, quantity)
 best = ranking[0]
-unit = profile.unit
 
-st.divider()
 cards = [
-    {"label": "Best outlet", "value": best.outlet.split(" (")[0], "unit": "",
-     "accent": True},
-    {"label": "Best FOB netback", "value": f"${best.netback:,.2f}", "unit": unit},
+    {"label": "Best outlet", "value": best.outlet, "accent": True,
+     "delta": f"{best.delivery_term}, {money(best.delivered_price)}/{unit} delivered"},
+    {"label": "FOB netback", "value": money(best.netback), "unit": unit,
+     "delta": f"${best.netback * quantity / 1e6:,.2f}M on the cargo"},
 ]
 if len(ranking) > 1:
+    headroom = best.cushion * moisture_factor
     cards += [
-        {"label": "Cushion vs #2", "value": f"${best.cushion:,.2f}", "unit": unit,
-         "delta": "netback can drop this much before #2 wins"},
-        {"label": "Cushion on the cargo", "value": f"${best.cushion * quantity:,.0f}",
-         "unit": "", "delta": f"{quantity:,.0f} {unit}"},
+        {"label": "Lead over #2", "value": money(best.cushion), "unit": unit,
+         "delta": f"${best.cushion * quantity:,.0f} on the cargo",
+         "delta_kind": "pos"},
+        {"label": "Freight headroom", "value": money(headroom), "unit": f_unit,
+         "delta": f"rise on {best.outlet.split(' → ')[1]} freight before "
+                  f"{ranking[1].outlet.split(' → ')[1]} wins"},
     ]
 theme.metric_cards(cards)
 
 # netback ladder
-names = [r.outlet.split(" (")[0] for r in ranking][::-1]
-values = [r.netback for r in ranking][::-1]
-colors = [theme.CHART_TOTAL if r.rank == 1 else "#587FA8" for r in ranking][::-1]
-lo, hi = min(values), max(values)
-pad = (hi - lo) * 0.6 or hi * 0.05
-fig = go.Figure(go.Bar(
-    x=values, y=names, orientation="h", marker_color=colors,
-    text=[f"{v:,.2f}" + ("" if r.rank == 1 else f"  ({r.spread_vs_best:+,.2f})")
-          for v, r in zip(values, ranking[::-1])],
-    textposition="outside",
-    textfont=dict(family=theme.MONO, color=theme.TEXT, size=11),
-    hovertemplate=f"%{{y}}<br>%{{x:,.2f}} USD/{unit}<extra></extra>",
-))
-terminal_layout(fig, height=110 + 60 * len(ranking), showlegend=False,
-                xaxis=dict(range=[lo - pad, hi + pad * 0.6],
-                           title=f"FOB netback, USD/{unit}"),
-                yaxis=dict(automargin=True, tickfont=dict(family=theme.SANS,
-                                                          color=theme.TEXT, size=12)),
-                margin=dict(t=20, b=40, l=10, r=10))
-st.plotly_chart(fig, width="stretch")
+if len(ranking) > 1:
+    ordered = ranking[::-1]
+    values = [r.netback for r in ordered]
+    lo, hi = min(values), max(values)
+    pad = (hi - lo) or hi * 0.05
+    fig = go.Figure(go.Bar(
+        x=values, y=[r.outlet for r in ordered], orientation="h",
+        marker_color=[theme.CHART_TOTAL if r.rank == 1 else NEUTRAL_BAR
+                      for r in ordered],
+        text=[f"{r.netback:,.2f}" for r in ordered],
+        textposition="inside", insidetextanchor="end", textangle=0,
+        textfont=dict(family=theme.MONO, color="#0A0E17", size=12),
+        hovertemplate=f"%{{y}}<br>%{{x:,.2f}} USD/{unit}<extra></extra>",
+    ))
+    terminal_layout(fig, height=96 + 52 * len(ranking), showlegend=False,
+                    xaxis=dict(range=[lo - pad, hi + pad * 0.08], nticks=5,
+                               title=f"FOB netback, USD/{unit}",
+                               title_font=dict(size=11, color=theme.MUTED)),
+                    yaxis=dict(automargin=True,
+                               tickfont=dict(family=theme.SANS, color=theme.TEXT,
+                                             size=12)),
+                    margin=dict(t=12, b=44, l=8, r=8))
+    chart(fig)
 
-theme.data_table(
-    ["#", "Outlet", "Term", f"Delivered USD/{unit}", "Freight", "Other costs",
-     "Quality", "FOB netback", "vs best", "Cargo vs best USD"],
-    [[str(r.rank), r.outlet, r.delivery_term, f"{r.delivered_price:,.2f}",
-      f"{r.freight:,.2f}", f"{r.other_costs:,.2f}", f"{r.quality_adjustment:+,.2f}",
-      f"{r.netback:,.2f}", f"{r.spread_vs_best:+,.2f}",
-      f"{r.cargo_spread_vs_best:+,.0f}"] for r in ranking],
-)
+st.subheader("Ranking")
+headers = ["#", "Outlet", "Term", "Delivered", "Freight", "Other costs", "Quality",
+           "FOB netback", "vs best", "Cargo vs best"]
+table = [[str(r.rank), r.outlet, r.delivery_term, f"{r.delivered_price:,.2f}",
+          f"{-r.freight:,.2f}", f"{-r.other_costs:,.2f}",
+          f"{r.quality_adjustment:+,.2f}", f"{r.netback:,.2f}",
+          "best" if r.rank == 1 else f"{r.spread_vs_best:+,.2f}",
+          "" if r.rank == 1 else f"{r.cargo_spread_vs_best:+,.0f}"] for r in ranking]
+signed = (6, 8, 9)
+if is_concentrate:          # assays are priced in the delivered value
+    headers = headers[:6] + headers[7:]
+    table = [row[:6] + row[7:] for row in table]
+    signed = (7, 8)
+theme.data_table(headers, table, numeric_from=3, highlight=0, signed_cols=signed)
 
-notes = ["Freight is shown per dry unit." if profile.freight_moisture_key else ""]
-if origin == ALL and len(by_origin) > 1:
+notes = [f"USD/{unit}; freight per dry unit." if profile.freight_moisture_key
+         else f"USD/{unit}."]
+if origin == ALL:
     notes.append("Several load ports: each netback is FOB at its own port, so "
-                 "the ranking compares origins as well as outlets.")
-if is_concentrate:
-    notes.append("Delivered = net invoice value under each smelter's terms. "
-                 "Non-benchmark TC/RCs in the reference data are illustrative.")
-else:
-    notes.append("Destination differentials in the reference data are "
-                 "illustrative assumptions; overwrite them with live quotes.")
-st.caption(" ".join(n for n in notes if n))
+                 "the ranking compares origins as well as outlets (inland "
+                 "logistics to the port not included).")
+notes.append("Delivered = net invoice value under each smelter's terms; "
+             "non-benchmark TC/RCs in the reference data are illustrative."
+             if is_concentrate else
+             "Destination price differentials in the reference data are "
+             "illustrative; overwrite them with live quotes.")
+st.caption(" ".join(notes))
