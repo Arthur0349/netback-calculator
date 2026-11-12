@@ -168,18 +168,7 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
         "Commission (%)", min_value=0.0, value=float(seed["commission_pct"]),
         step=0.05, format="%.2f", key=f"{k}commission")
 
-    container.markdown("**Cargo assays** (benchmark in parentheses)"
-                       if profile.concentrate_terms else
-                       "**Cargo quality** (benchmark in parentheses)")
-    seed_quality = seed.get("actual_quality", {})
-    actual_quality = {
-        spec_key: container.number_input(
-            f"{spec_key} ({benchmark_value:g})",
-            value=float(seed_quality.get(spec_key, benchmark_value)),
-            key=f"{k}quality_{spec_key}", format="%.2f",
-        )
-        for spec_key, benchmark_value in profile.benchmark_spec.items()
-    }
+    actual_quality = quality_inputs(profile, seed, container, key_prefix=k)
 
     return CostInputs(
         quantity=quantity,
@@ -196,6 +185,43 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
     )
 
 
+def quality_inputs(profile: CommodityProfile, seed: dict[str, Any], container,
+                   key_prefix: str = "") -> dict[str, float]:
+    """One widget per benchmark spec key, seeded from the reference cargo."""
+    container.markdown("**Cargo assays** (benchmark in parentheses)"
+                       if profile.concentrate_terms else
+                       "**Cargo quality** (benchmark in parentheses)")
+    seed_quality = seed.get("actual_quality", {})
+    return {
+        spec_key: container.number_input(
+            f"{spec_key} ({benchmark_value:g})",
+            value=float(seed_quality.get(spec_key, benchmark_value)),
+            key=f"{key_prefix}quality_{spec_key}", format="%.2f",
+        )
+        for spec_key, benchmark_value in profile.benchmark_spec.items()
+    }
+
+
+def freight_unit(profile: CommodityProfile) -> str:
+    return "wmt" if profile.freight_moisture_key else profile.unit
+
+
+def route_label(route: Route) -> str:
+    return _route_label(route)
+
+
+def metal_price_inputs(profile: CommodityProfile, metal_prices: dict[str, float],
+                       container, key_prefix: str = "") -> dict[str, float]:
+    container.markdown("**Metal prices**")
+    return {
+        p.price_key: container.number_input(
+            f"{p.price_key} ({_PRICE_UNITS[p.unit]})", min_value=0.0,
+            value=float(metal_prices.get(p.price_key, 0.0)),
+            key=f"{key_prefix}px_{p.price_key}")
+        for p in profile.concentrate_terms.payables
+    }
+
+
 _PRICE_UNITS = {"pct": "USD/t", "g_per_t": "USD/oz"}
 _RC_UNITS = {"pct": "USD/lb payable", "g_per_t": "USD/oz payable"}
 
@@ -207,13 +233,7 @@ def concentrate_inputs(profile: CommodityProfile, metal_prices: dict[str, float]
     Returns the profile with the edited terms and the edited prices."""
     terms = profile.concentrate_terms
     k = key_prefix
-    container.markdown("**Metal prices**")
-    prices = {}
-    for p in terms.payables:
-        prices[p.price_key] = container.number_input(
-            f"{p.price_key} ({_PRICE_UNITS[p.unit]})", min_value=0.0,
-            value=float(metal_prices.get(p.price_key, 0.0)),
-            key=f"{k}px_{p.price_key}")
+    prices = metal_price_inputs(profile, metal_prices, container, key_prefix=k)
     container.markdown("**Smelter terms**")
     tc = container.number_input(
         "TC (USD/dmt, negative = smelter pays)", value=float(terms.treatment_charge),

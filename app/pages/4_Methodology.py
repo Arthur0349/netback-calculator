@@ -124,12 +124,29 @@ $$P_{CIF} = \sum_m \text{payable}_m \times \text{price}_m - TC - \sum_m RC_m \ti
 The assays are fully priced in the valuation, so concentrates carry no
 separate quality adjustment.
 
+## Arbitrage matrix
+
+The same cargo is netted back from every outlet, each with its own
+destination pricing (a delivered price differential for index-priced
+commodities, the destination smelter's TC/RCs for concentrates), its own
+freight and port costs, and ranked on FOB netback.
+
+- **Spread vs best**: netback gap to the best outlet, per unit and over the
+  whole cargo.
+- **Cushion**: how far the best outlet's netback can fall (freight up, price
+  down, TC worse) before the runner-up wins:
+  $\text{cushion} = NB_{1} - NB_{2}$. For a freight move on a wet-quoted
+  route, the break-even freight rise is $\text{cushion} \times (1 - m/100)$
+  USD/wmt.
+
 ## Assumptions & limits
 
 - Reference prices, freight rates and port fees are **static indicative
   figures** at realistic mid-2020s levels, chosen for internal consistency
   rather than day-accuracy. Live assessments are a planned extension behind
   the same `PriceDataProvider` interface.
+- Destination differentials and non-benchmark TC/RCs in the reference
+  data are illustrative, not assessments; they are editable in the app.
 - Concentrates: the quotational period (QP), provisional/final invoicing
   and price participation are not modelled; prices are the QP average.
 - Demurrage/despatch, weather routing, bunker adjustment factors and FX are

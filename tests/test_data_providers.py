@@ -210,6 +210,7 @@ def test_live_provider_is_a_stub():
                  lambda: live.get_commodity_profile("iron_ore"),
                  lambda: live.get_benchmark_price("iron_ore"),
                  lambda: live.get_metal_prices("copper_concentrate"),
+                 lambda: live.get_destination_market("lobito_qingdao"),
                  lambda: live.list_routes(),
                  lambda: live.get_route("morebaya_qingdao"),
                  lambda: live.get_freight_rate(route),

@@ -30,6 +30,9 @@ with st.sidebar:
 
     st.subheader("Voyage")
     route_id, route = route_inputs(provider, commodity, st)
+    if route_id is not None:
+        # destination-specific terms (e.g. the smelter's TC/RCs)
+        profile = provider.get_commodity_profile(commodity, route_id)
 
     st.subheader("Costs")
     seed = seed_inputs(provider, commodity, route_id)
@@ -41,7 +44,7 @@ with st.sidebar:
         st.subheader("Pricing")
         profile, metal_prices = concentrate_inputs(
             profile, provider.get_metal_prices(commodity), st,
-            key_prefix=f"{commodity}_")
+            key_prefix=f"{commodity}_{route_id}_")
 
 st.title(f"{profile.name} — "
          f"{'netback' if mode == 'netback' else 'landed cost'}")

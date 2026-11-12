@@ -55,15 +55,34 @@ class StaticDataProvider(PriceDataProvider):
     def list_commodities(self) -> list[str]:
         return sorted(self._specs)
 
-    def get_commodity_profile(self, commodity: str) -> CommodityProfile:
-        return CommodityProfile(**self._spec(commodity)["profile"])
+    def get_commodity_profile(self, commodity: str,
+                              route_id: str | None = None) -> CommodityProfile:
+        profile = CommodityProfile(**self._spec(commodity)["profile"])
+        if route_id is None or profile.concentrate_terms is None:
+            return profile
+        market = self.get_destination_market(route_id)
+        terms = profile.concentrate_terms
+        rcs = market.get("refining_charges", {})
+        payables = [p.model_copy(update={"refining_charge": rcs[p.element]})
+                    if p.element in rcs else p for p in terms.payables]
+        terms = terms.model_copy(update={
+            "payables": payables,
+            "treatment_charge": market.get("treatment_charge",
+                                           terms.treatment_charge)})
+        return profile.model_copy(update={"concentrate_terms": terms})
+
+    def get_destination_market(self, route_id: str) -> dict:
+        self.get_route(route_id)                     # validates the id
+        market = self._routes[route_id].get("market", {})
+        return {k: v for k, v in market.items() if not k.startswith("_")}
 
     def get_metal_prices(self, commodity: str) -> dict[str, float]:
         return {k: float(v) for k, v in
                 self._spec(commodity).get("metal_prices", {}).items()}
 
-    def _concentrate_value(self, commodity: str, assays: dict[str, float]) -> float:
-        profile = self.get_commodity_profile(commodity)
+    def _concentrate_value(self, commodity: str, assays: dict[str, float],
+                           route_id: str | None = None) -> float:
+        profile = self.get_commodity_profile(commodity, route_id)
         return value_concentrate(assays, profile.concentrate_terms,
                                  self.get_metal_prices(commodity)).net_value
 
@@ -130,10 +149,12 @@ class StaticDataProvider(PriceDataProvider):
         route = self.get_route(route_id)
         if price_basis is None:
             if self.get_commodity_profile(commodity).concentrate_terms is not None:
-                price_basis = self._concentrate_value(commodity,
-                                                      defaults["actual_quality"])
+                price_basis = self._concentrate_value(
+                    commodity, defaults["actual_quality"], route_id)
             else:
-                price_basis = self.get_benchmark_price(commodity)
+                price_basis = (self.get_benchmark_price(commodity)
+                               + self.get_destination_market(route_id)
+                               .get("price_differential", 0.0))
         return CostInputs(
             quantity=quantity if quantity is not None else defaults["quantity"],
             price_basis=price_basis,

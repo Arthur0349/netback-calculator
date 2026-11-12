@@ -24,8 +24,16 @@ class PriceDataProvider(ABC):
         """Keys of every commodity the provider knows about."""
 
     @abstractmethod
-    def get_commodity_profile(self, commodity: str) -> CommodityProfile:
-        """Validated profile for a commodity key."""
+    def get_commodity_profile(self, commodity: str,
+                              route_id: str | None = None) -> CommodityProfile:
+        """Validated profile for a commodity key. With a route, concentrate
+        terms carry that destination smelter's TC/RCs."""
+
+    @abstractmethod
+    def get_destination_market(self, route_id: str) -> dict:
+        """Destination pricing for a route: ``price_differential`` ($/unit vs
+        the benchmark) for index-priced commodities, ``treatment_charge`` and
+        ``refining_charges`` for concentrates. Empty if none."""
 
     @abstractmethod
     def get_benchmark_price(self, commodity: str) -> float:

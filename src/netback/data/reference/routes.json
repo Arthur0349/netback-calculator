@@ -1,5 +1,5 @@
 {
-  "_notes": "Distances from standard sea-distance tables, transit at typical laden service speed for the vessel class (Capesize ~13.5 kn, VLCC/Suezmax ~12.5 kn) plus canal/waiting allowance.",
+  "_notes": "Distances from standard sea-distance tables, transit at typical laden service speed for the vessel class (Capesize ~13.5 kn, VLCC/Suezmax ~12.5 kn) plus canal/waiting allowance. 'market' holds the destination's pricing: for index-priced commodities a delivered price differential vs the benchmark; for concentrates the destination smelter's TC ($/dmt) and RCs ($/lb or $/oz payable). Differentials and non-benchmark TC/RCs are ILLUSTRATIVE assumptions to show the arbitrage mechanics, not assessments; all are editable in the app.",
   "morebaya_qingdao": {
     "commodity": "iron_ore",
     "route": {
@@ -9,7 +9,11 @@
       "transit_days": 34,
       "vessel_type": "Capesize"
     },
-    "_sources": "West Africa -> North China via Cape of Good Hope / Sunda Strait"
+    "_sources": "West Africa -> North China via Cape of Good Hope / Sunda Strait",
+    "market": {
+      "price_differential": 0.0,
+      "_basis": "IODEX CFR Qingdao benchmark"
+    }
   },
   "morebaya_rotterdam": {
     "commodity": "iron_ore",
@@ -20,7 +24,11 @@
       "transit_days": 10,
       "vessel_type": "Capesize"
     },
-    "_sources": "Guinea -> NW Europe direct Atlantic leg"
+    "_sources": "Guinea -> NW Europe direct Atlantic leg",
+    "market": {
+      "price_differential": -6.0,
+      "_basis": "Illustrative: European delivered discount vs CFR China index"
+    }
   },
   "ras_tanura_ningbo": {
     "commodity": "crude_oil",
@@ -31,7 +39,11 @@
       "transit_days": 22,
       "vessel_type": "VLCC"
     },
-    "_sources": "Arabian Gulf -> East China, TD3C-style voyage"
+    "_sources": "Arabian Gulf -> East China, TD3C-style voyage",
+    "market": {
+      "price_differential": 0.0,
+      "_basis": "Delivered East Asia benchmark"
+    }
   },
   "ras_tanura_rotterdam": {
     "commodity": "crude_oil",
@@ -42,7 +54,11 @@
       "transit_days": 24,
       "vessel_type": "Suezmax"
     },
-    "_sources": "Arabian Gulf -> NW Europe via Suez (laden transit)"
+    "_sources": "Arabian Gulf -> NW Europe via Suez (laden transit)",
+    "market": {
+      "price_differential": -1.2,
+      "_basis": "Illustrative: medium-sour delivered NWE discount vs East Asia"
+    }
   },
   "kamsar_yantai": {
     "commodity": "bauxite",
@@ -53,7 +69,11 @@
       "transit_days": 35,
       "vessel_type": "Capesize"
     },
-    "_sources": "Guinea -> Shandong via Cape of Good Hope"
+    "_sources": "Guinea -> Shandong via Cape of Good Hope",
+    "market": {
+      "price_differential": 0.0,
+      "_basis": "Guinea bauxite CIF China benchmark"
+    }
   },
   "lobito_qingdao": {
     "commodity": "copper_concentrate",
@@ -64,7 +84,14 @@
       "transit_days": 37,
       "vessel_type": "Supramax"
     },
-    "_sources": "Angola (Lobito Atlantic Railway outlet) -> North China via Cape of Good Hope, Supramax ~13 kn"
+    "_sources": "Angola (Lobito Atlantic Railway outlet) -> North China via Cape of Good Hope, Supramax ~13 kn",
+    "market": {
+      "treatment_charge": 0.0,
+      "refining_charges": {
+        "Cu": 0.0
+      },
+      "_basis": "2026 annual benchmark terms (USD 0/dmt, 0 c/lb)"
+    }
   },
   "lobito_huelva": {
     "commodity": "copper_concentrate",
@@ -75,7 +102,14 @@
       "transit_days": 15,
       "vessel_type": "Supramax"
     },
-    "_sources": "Angola -> SW Spain (Atlantic Copper smelter), direct Atlantic leg"
+    "_sources": "Angola -> SW Spain (Atlantic Copper smelter), direct Atlantic leg",
+    "market": {
+      "treatment_charge": 15.0,
+      "refining_charges": {
+        "Cu": 0.015
+      },
+      "_basis": "Illustrative: European custom smelter holding out for positive terms"
+    }
   },
   "dar_es_salaam_fangchenggang": {
     "commodity": "copper_concentrate",
@@ -86,6 +120,13 @@
       "transit_days": 21,
       "vessel_type": "Supramax"
     },
-    "_sources": "Tanzania -> Guangxi smelter cluster via Indian Ocean / Malacca"
+    "_sources": "Tanzania -> Guangxi smelter cluster via Indian Ocean / Malacca",
+    "market": {
+      "treatment_charge": -100.0,
+      "refining_charges": {
+        "Cu": -0.01
+      },
+      "_basis": "Illustrative: spot-linked Chinese terms (spot TC/RC around -USD 120 equivalent, mid-2026)"
+    }
   }
 }

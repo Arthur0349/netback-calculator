@@ -12,7 +12,9 @@ only the sign of the cost legs flips.
 
 This is the calculation a physical trader runs to compare outlets, and a buyer
 runs to compare origins. The waterfall on the Calculator page is the natural
-picture of a netback; the Scenario comparison page is the arbitrage view.
+picture of a netback; the Arbitrage page ranks every outlet for one cargo,
+each with its own destination price or smelter terms, and shows how much the
+best outlet can lose before the runner-up wins.
 
 ## Screenshots
 
@@ -23,7 +25,7 @@ picture of a netback; the Scenario comparison page is the arbitrage view.
 ![Calculator page top](docs/screenshots/calculator.png)
 ![Calculator page cost structure and full breakdown table](docs/screenshots/calculator2.png)
 
-**Scenario comparison — the arbitrage view**
+**Scenario comparison**
 ![Scenario comparison page](docs/screenshots/scenariocomparison.png)
 
 ## Config-driven by construction
@@ -92,7 +94,7 @@ pytest
 | Engine | Python 3.10+, pure functions, pydantic v2 models |
 | Data | JSON reference tables behind a `PriceDataProvider` ABC |
 | UI | Streamlit multipage app, Plotly (`go.Waterfall`) charts |
-| Quality | pytest (54 tests, hand-computed reference cases), GitHub Actions on every push |
+| Quality | pytest (60 tests, hand-computed reference cases), GitHub Actions on every push |
 
 ## Roadmap
 
@@ -100,6 +102,7 @@ pytest
 - [x] Static data layer (iron ore, bauxite, crude oil; spodumene config skeleton)
 - [x] Incoterm-aware cost legs (CFR/CIF/DAP/DPU), wet-to-dry freight conversion
 - [x] Concentrate valuation: payables, TC/RC, penalties (copper)
+- [x] Arbitrage matrix: per-destination pricing/terms, ranking, cushion vs runner-up
 - [x] Streamlit app: calculator, scenario comparison, methodology
 - [x] GitHub Actions CI (pytest on push)
 - [ ] Deploy to Streamlit Community Cloud

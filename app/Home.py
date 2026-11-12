@@ -51,10 +51,13 @@ st.divider()
 st.page_link("pages/1_Calculator.py",
              label="**Calculator** — single-voyage netback / landed cost "
                    "with waterfall breakdown")
-st.page_link("pages/2_Scenario_comparison.py",
+st.page_link("pages/2_Arbitrage.py",
+             label="**Arbitrage matrix** — one cargo, every outlet, ranked on "
+                   "FOB netback with the cushion vs the runner-up")
+st.page_link("pages/3_Scenario_comparison.py",
              label="**Scenario comparison** — routes or cargoes side by "
-                   "side, the arbitrage view")
-st.page_link("pages/3_Methodology.py",
+                   "side, cost leg by cost leg")
+st.page_link("pages/4_Methodology.py",
              label="**Methodology** — formulas and assumptions behind every "
                    "cost leg")
 

@@ -42,6 +42,7 @@ for i, col in enumerate(columns):
             )(provider.get_route(rid)),
         )
 
+        profile = provider.get_commodity_profile(commodity, route_id)
         seed = seed_inputs(provider, commodity, route_id)
         k = f"cmp_{i}_{commodity}_{route_id}"
         is_concentrate = profile.concentrate_terms is not None
