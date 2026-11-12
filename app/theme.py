@@ -70,12 +70,12 @@ header[data-testid="stHeader"] {{
     font-weight: 500;
 }}
 
-/* One waterfall per viewport: vertical on desktop, horizontal on phones. */
-.st-key-nb_wide {{ display: block; }}
-.st-key-nb_narrow {{ display: none; }}
+/* One chart per viewport (waterfall, route map): wide or narrow variant. */
+[class*="st-key-nb_wide"] {{ display: block; }}
+[class*="st-key-nb_narrow"] {{ display: none; }}
 @media (max-width: 700px) {{
-    .st-key-nb_wide {{ display: none; }}
-    .st-key-nb_narrow {{ display: block; }}
+    [class*="st-key-nb_wide"] {{ display: none; }}
+    [class*="st-key-nb_narrow"] {{ display: block; }}
     .block-container {{ padding-left: 1rem; padding-right: 1rem; }}
     table.nb-table {{ font-size: 0.72rem; }}
     table.nb-table th, table.nb-table td {{ padding: 0.3rem 0.4rem; }}
@@ -133,6 +133,18 @@ hr {{
 .nb-ticker .nb-tick-tag {{
     color: {MUTED};
     font-weight: 600;
+}}
+.nb-ticker .nb-tick-live {{
+    color: {DELTA_GREEN};
+}}
+.nb-ticker .nb-tick-dot {{
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: {DELTA_GREEN};
+    margin-right: 0.35rem;
+    vertical-align: middle;
 }}
 .nb-ticker .nb-tick-unit {{
     color: {MUTED};
@@ -238,7 +250,30 @@ table.nb-table tr.nb-hl td {{
 table.nb-table td.nb-pos {{ color: {DELTA_GREEN}; }}
 table.nb-table td.nb-neg {{ color: {DELTA_RED}; }}
 
+/* ---- Map legend ------------------------------------------------------ */
+.nb-legend {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 1.3rem;
+    font-size: 0.72rem;
+    color: {MUTED};
+    margin: -0.4rem 0 0.9rem;
+}}
+.nb-legend-line {{
+    display: inline-block;
+    width: 18px;
+    height: 2px;
+    margin-right: 0.45rem;
+    vertical-align: middle;
+}}
+
 /* ---- Text panels (Home) -------------------------------------------- */
+.nb-panels {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.75rem;
+    margin: 0.35rem 0 0.9rem 0;
+}}
 a.nb-panel {{
     display: block;
     text-decoration: none !important;
@@ -287,24 +322,46 @@ def inject() -> None:
 
 
 def ticker(provider) -> None:
-    """Thin amber strip of the static reference prices, with their unit and
-    the date of the reference data. Scrolls sideways on narrow screens."""
+    """Thin amber strip of the reference prices with their unit. Static
+    source: the date of the reference set. Live source: fetch time, a green
+    dot on every figure that rests on a live quote, and SOFR. Scrolls
+    sideways on narrow screens."""
+    live = bool(getattr(provider, "is_live", False))
     spans = []
+
+    def item(label: str, value: str, unit: str, title: str, dot: bool) -> None:
+        mark = '<span class="nb-tick-dot"></span>' if dot else ""
+        spans.append(
+            f'<span title="{html.escape(title)}">'
+            f'<span class="nb-tick-label">{html.escape(label)}</span>'
+            f'<span class="nb-tick-value">{mark}{html.escape(value)}</span>'
+            f'<span class="nb-tick-unit">{html.escape(unit)}</span></span>')
+
     for commodity in provider.list_commodities():
         try:
             price = provider.get_benchmark_price(commodity)
         except KeyError:
             continue  # config skeleton, no reference price
         profile = provider.get_commodity_profile(commodity)
-        spans.append(
-            f'<span title="{html.escape(profile.name)} reference price">'
-            f'<span class="nb-tick-label">{html.escape(profile.name.upper())}</span>'
-            f'<span class="nb-tick-value">{price:,.2f}</span>'
-            f'<span class="nb-tick-unit">USD/{html.escape(profile.unit)}</span></span>')
+        is_live = live and provider.is_live_price(commodity)
+        item(profile.name.upper(), f"{price:,.2f}", f"USD/{profile.unit}",
+             f"{profile.name}: " + ("live delayed quote" if is_live
+                                    else "static reference price"), is_live)
+    if live and provider.sofr is not None:
+        item("SOFR", f"{provider.sofr:.2f}", "%",
+             "SOFR, latest New York Fed fixing", True)
+
     as_of = getattr(provider, "as_of", "")
-    tag = "STATIC REF" + (f" · {as_of.upper()}" if as_of else "")
+    if live:
+        tag = f"LIVE · {provider.fetched_at:%d %b %H:%M} UTC".upper()
+        tag_class = "nb-tick-tag nb-tick-live"
+    else:
+        tag = "STATIC REF" + (f" · {as_of.upper()}" if as_of else "")
+        if hasattr(provider, "quotes"):       # live requested, no source answered
+            tag += " · LIVE SOURCES UNAVAILABLE"
+        tag_class = "nb-tick-tag"
     st.markdown(
-        f'<div class="nb-ticker"><span class="nb-tick-tag">{html.escape(tag)}</span>'
+        f'<div class="nb-ticker"><span class="{tag_class}">{html.escape(tag)}</span>'
         f'{"".join(spans)}</div>',
         unsafe_allow_html=True,
     )

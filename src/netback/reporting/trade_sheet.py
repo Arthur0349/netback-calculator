@@ -118,7 +118,8 @@ def build_trade_sheet(result: NetbackResult, inputs: CostInputs, route: Route,
                       profile: CommodityProfile,
                       metal_prices: dict[str, float] | None = None,
                       sensitivities: list[SensitivityRow] | None = None,
-                      as_of: str = "", today: date | None = None) -> bytes:
+                      as_of: str = "", today: date | None = None,
+                      live: bool = False) -> bytes:
     """Render the trade sheet and return the PDF bytes (always one page)."""
     unit = profile.unit
     pdf = FPDF(format="A4")
@@ -247,7 +248,9 @@ def build_trade_sheet(result: NetbackResult, inputs: CostInputs, route: Route,
     pdf.set_text_color(*MUTED)
     stamp = f" Reference data as of {as_of}." if as_of else ""
     pdf.multi_cell(width, 3, _t(
-        "Indicative calculation on static reference figures and user inputs; "
+        "Indicative calculation on "
+        + ("delayed public quotes, " if live else "")
+        + "static reference figures and user inputs; "
         "not a quote or an assessment." + stamp + " "
         "Netback Calculator, "
         "github.com/Arthur0349/netback-calculator"))

@@ -3,19 +3,19 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import theme
+from maps import Lane, map_legend, responsive_map
 from netback.core.arbitrage import rank_outlets
 from netback.models.schemas import DELIVERY_TERM_LEGS, CostInputs
 from ui_helpers import (NEUTRAL_BAR, chart, commodity_selectbox, compute,
-                        freight_unit, get_provider, metal_price_inputs, money,
+                        freight_unit, metal_price_inputs, money,
                         quality_inputs, route_label, seed_inputs,
-                        terminal_layout)
+                        setup_page, source_tag, terminal_layout)
 
 st.set_page_config(page_title="Arbitrage · Netback Calculator",
                    page_icon="🚢", layout="wide")
 theme.inject()
 
-provider = get_provider()
-theme.ticker(provider)
+provider = setup_page("arbitrage")
 
 ALL = "All load ports"
 
@@ -43,7 +43,7 @@ with st.sidebar:
     origin = st.selectbox("Load port", choices, key=f"arb_origin_{commodity}")
     shown = route_ids if origin == ALL else by_origin[origin]
 
-    k = f"arb_{commodity}_"
+    k = f"arb_{commodity}_{source_tag()}_"
     seed = seed_inputs(provider, commodity, shown[0])
     cargo = st.expander("Cargo", expanded=True)
     quantity = cargo.number_input(f"Quantity ({profile.unit})", min_value=1.0,
@@ -105,7 +105,7 @@ for rid in shown:
 two_dp = st.column_config.NumberColumn(format="%.2f", min_value=0.0)
 edited = st.data_editor(
     pd.DataFrame(rows), hide_index=True, width="stretch",
-    key=f"arb_editor_{commodity}_{origin}", disabled=["Outlet"],
+    key=f"arb_editor_{commodity}_{origin}_{source_tag()}", disabled=["Outlet"],
     column_config={
         "Outlet": st.column_config.TextColumn(width="medium"),
         "Term": st.column_config.SelectboxColumn(
@@ -125,7 +125,7 @@ st.caption("Every cell is editable: overwrite the reference figures with "
 
 # --- compute and rank -----------------------------------------------------------
 
-results, moisture_factor = {}, 1.0
+results, route_of, moisture_factor = {}, {}, 1.0
 if profile.freight_moisture_key:
     moisture_factor = 1 - actual_quality[profile.freight_moisture_key] / 100
 for rid, (_, row) in zip(shown, edited.iterrows()):
@@ -153,6 +153,7 @@ for rid, (_, row) in zip(shown, edited.iterrows()):
     )
     results[row["Outlet"]] = compute(inputs, route, outlet_profile, "netback",
                                      metal_prices)
+    route_of[row["Outlet"]] = (rid, route)
 
 ranking = rank_outlets(results, quantity)
 best = ranking[0]
@@ -214,6 +215,21 @@ if is_concentrate:          # assays are priced in the delivered value
     table = [row[:6] + row[7:] for row in table]
     signed = (7, 8)
 theme.data_table(headers, table, numeric_from=3, highlight=0, signed_cols=signed)
+
+st.subheader("Trade lanes")
+responsive_map([
+    Lane(load_port=route_of[r.outlet][1].load_port,
+         discharge_port=route_of[r.outlet][1].discharge_port,
+         path=provider.get_route_path(route_of[r.outlet][0]),
+         rank="best" if r.rank == 1 else "focus",
+         hover=(f"<b>{r.outlet}</b>  #{r.rank} of {len(ranking)}<br>"
+                f"FOB netback {money(r.netback)}/{unit}<br>"
+                f"{route_of[r.outlet][1].vessel_type} · "
+                f"{route_of[r.outlet][1].transit_days:g} d"
+                + ("" if r.rank == 1 else
+                   f" · {money(r.spread_vs_best, signed=True)} vs best")))
+    for r in ranking], key="arb_map", height=400)
+st.markdown(map_legend("Best outlet", "Other outlets"), unsafe_allow_html=True)
 
 notes = [f"USD/{unit}; freight per dry unit." if profile.freight_moisture_key
          else f"USD/{unit}."]

@@ -1,12 +1,12 @@
 {
-  "_notes": "Distances from standard sea-distance tables, transit at typical laden service speed for the vessel class (Capesize ~13.5 kn, VLCC/Suezmax ~12.5 kn) plus canal/waiting allowance. 'market' holds the destination's pricing: for index-priced commodities a delivered price differential vs the benchmark; for concentrates the destination smelter's TC ($/dmt) and RCs ($/lb or $/oz payable). Differentials and non-benchmark TC/RCs are ILLUSTRATIVE assumptions to show the arbitrage mechanics, not assessments; all are editable in the app.",
+  "_notes": "Distances from standard sea-distance tables. Transit days = distance / (laden service speed of the vessel class in vessels.json x 24) plus a 5 % sea margin, plus one day for a canal transit, rounded to the day: the same convention as the voyage estimate, so the Calculator and the Freight page agree. 'market' holds the destination's pricing: for index-priced commodities a delivered price differential vs the benchmark; for concentrates the destination smelter's TC ($/dmt) and RCs ($/lb or $/oz payable). Differentials and non-benchmark TC/RCs are ILLUSTRATIVE assumptions to show the arbitrage mechanics, not assessments; all are editable in the app. 'voyage' (optional) overrides the vessel-class defaults of the voyage estimate for that route.",
   "morebaya_qingdao": {
     "commodity": "iron_ore",
     "route": {
       "load_port": "Morebaya",
       "discharge_port": "Qingdao",
       "distance_nm": 11800,
-      "transit_days": 34,
+      "transit_days": 40,
       "vessel_type": "Capesize"
     },
     "_sources": "West Africa -> North China via Cape of Good Hope / Sunda Strait",
@@ -36,7 +36,7 @@
       "load_port": "Ras Tanura",
       "discharge_port": "Ningbo",
       "distance_nm": 5850,
-      "transit_days": 22,
+      "transit_days": 21,
       "vessel_type": "VLCC"
     },
     "_sources": "Arabian Gulf -> East China, TD3C-style voyage",
@@ -51,13 +51,19 @@
       "load_port": "Ras Tanura",
       "discharge_port": "Rotterdam",
       "distance_nm": 6400,
-      "transit_days": 24,
+      "transit_days": 23,
       "vessel_type": "Suezmax"
     },
     "_sources": "Arabian Gulf -> NW Europe via Suez (laden transit)",
     "market": {
       "price_differential": -1.2,
       "_basis": "Illustrative: medium-sour delivered NWE discount vs East Asia"
+    },
+    "voyage": {
+      "ballast_pct": 60.0,
+      "canal_days": 1.0,
+      "canal_dues": 420000,
+      "_basis": "Laden Suez transit only (Suezmax, indicative dues); after NW Europe the ship reloads in the Atlantic basin rather than ballasting back to the Gulf, so 60 % of the laden distance is charged to this voyage"
     }
   },
   "kamsar_yantai": {
@@ -66,7 +72,7 @@
       "load_port": "Kamsar",
       "discharge_port": "Yantai",
       "distance_nm": 11000,
-      "transit_days": 35,
+      "transit_days": 37,
       "vessel_type": "Capesize"
     },
     "_sources": "Guinea -> Shandong via Cape of Good Hope",
@@ -81,7 +87,7 @@
       "load_port": "Lobito",
       "discharge_port": "Qingdao",
       "distance_nm": 10800,
-      "transit_days": 37,
+      "transit_days": 38,
       "vessel_type": "Supramax"
     },
     "_sources": "Angola (Lobito Atlantic Railway outlet) -> North China via Cape of Good Hope, Supramax ~13 kn",
@@ -135,7 +141,7 @@
       "load_port": "Kamsar",
       "discharge_port": "Khalifa Port",
       "distance_nm": 8800,
-      "transit_days": 27,
+      "transit_days": 30,
       "vessel_type": "Capesize"
     },
     "_sources": "Guinea -> Abu Dhabi (Al Taweelah alumina refinery) via Cape of Good Hope",

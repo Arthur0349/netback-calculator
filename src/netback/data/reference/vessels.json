@@ -1,0 +1,67 @@
+{
+  "_notes": "Indicative vessel classes for the voyage estimate: modern eco tonnage at service speed, one fuel grade (VLSFO) for simplicity. Cargo intake in the unit freight is quoted in (wet tonnes for dry bulk, barrels for tankers). Port days include typical waiting for berth; port costs are disbursement-account orders of magnitude (USD lumpsum per call). Orders of magnitude consistent with public owner fleet lists and broker voyage calculators, not a specific ship. Every figure is editable in the app.",
+  "bunkers": {
+    "vlsfo_usd_per_t": 560.0,
+    "_basis": "VLSFO delivered Singapore / Fujairah, indicative level consistent with the crude benchmark in commodity_specs.json"
+  },
+  "commission_pct": 3.75,
+  "sea_margin_pct": 5.0,
+  "classes": {
+    "Capesize": {
+      "name": "Capesize, 180,000 dwt",
+      "cargo_unit": "wmt",
+      "cargo_intake": 170000,
+      "speed_laden_kn": 13.0,
+      "speed_ballast_kn": 14.0,
+      "cons_laden_tpd": 46.0,
+      "cons_ballast_tpd": 43.0,
+      "cons_port_tpd": 5.0,
+      "port_days_load": 4.0,
+      "port_days_discharge": 4.0,
+      "port_cost_load": 130000,
+      "port_cost_discharge": 160000
+    },
+    "Supramax": {
+      "name": "Supramax, 58,000 dwt",
+      "cargo_unit": "wmt",
+      "cargo_intake": 52000,
+      "speed_laden_kn": 12.5,
+      "speed_ballast_kn": 13.0,
+      "cons_laden_tpd": 25.0,
+      "cons_ballast_tpd": 23.0,
+      "cons_port_tpd": 4.0,
+      "port_days_load": 5.0,
+      "port_days_discharge": 5.0,
+      "port_cost_load": 70000,
+      "port_cost_discharge": 75000
+    },
+    "Suezmax": {
+      "name": "Suezmax, 160,000 dwt",
+      "cargo_unit": "bbl",
+      "cargo_intake": 1000000,
+      "speed_laden_kn": 12.5,
+      "speed_ballast_kn": 13.0,
+      "cons_laden_tpd": 46.0,
+      "cons_ballast_tpd": 38.0,
+      "cons_port_tpd": 30.0,
+      "port_days_load": 2.0,
+      "port_days_discharge": 2.0,
+      "port_cost_load": 90000,
+      "port_cost_discharge": 140000
+    },
+    "VLCC": {
+      "name": "VLCC, 300,000 dwt",
+      "cargo_unit": "bbl",
+      "cargo_intake": 2000000,
+      "speed_laden_kn": 12.5,
+      "speed_ballast_kn": 13.0,
+      "cons_laden_tpd": 64.0,
+      "cons_ballast_tpd": 50.0,
+      "cons_port_tpd": 45.0,
+      "port_days_load": 2.0,
+      "port_days_discharge": 2.5,
+      "port_cost_load": 110000,
+      "port_cost_discharge": 230000
+    }
+  }
+}

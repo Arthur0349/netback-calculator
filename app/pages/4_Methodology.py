@@ -1,12 +1,12 @@
 import streamlit as st
 
 import theme
-from ui_helpers import get_provider
+from ui_helpers import setup_page
 
 st.set_page_config(page_title="Methodology · Netback Calculator",
                    page_icon="🚢", layout="wide")
 theme.inject()
-theme.ticker(get_provider())
+setup_page("methodology")
 
 st.title("Methodology")
 theme.subtitle("Every formula the engine uses, with its assumptions. "
@@ -44,16 +44,48 @@ cargo has a higher netback *and* a higher delivered value.
 
 $$F = \text{freight rate (USD/unit)}$$
 
-The rate itself comes from the data layer (static reference table today, a
-live source such as the Baltic Exchange later). The engine only applies it:
-Worldscale conversion or vessel-size adjustments belong in the data layer,
-keeping the core auditable.
+The netback engine only applies the rate. Where the rate comes from is the
+voyage estimate below; the reference table holds one indicative rate per
+route.
 
 **Wet vs dry tonnes.** Dry bulk freight is fixed per *wet* tonne shipped
 while ores are priced per *dry* tonne. For commodities flagged this way
 (iron ore, bauxite) the engine converts with the cargo moisture $m$:
 
 $$F_{dmt} = \frac{F_{wmt}}{1 - m/100}$$
+
+## Voyage estimate: where a freight rate comes from
+
+A freight rate is the price at which a voyage covers the ship (Freight
+page). With hire $H$ in USD/day, cargo intake $Q$ and address plus brokerage
+commission $c$:
+
+$$\text{days} = \frac{d_{laden}}{24\,v_{laden}}(1+s) + \frac{d_{ballast}}{24\,v_{ballast}}(1+s) + \text{port days} + \text{canal days}$$
+
+$$\text{voyage costs} = \text{bunkers} \times P_{bunker} + \text{port costs} + \text{canal dues}$$
+
+$$F = \frac{H \times \text{days} + \text{voyage costs}}{(1 - c)\,Q}$$
+
+Read the other way, the **time-charter equivalent** of a quoted rate is what
+the voyage pays the ship per day once the voyage costs are out:
+
+$$TCE = \frac{F \times Q \times (1 - c) - \text{voyage costs}}{\text{days}}$$
+
+- $s$ is the sea margin (weather, currents). Bunkers are sea days times sea
+  consumption plus port and canal days times port consumption.
+- The **ballast leg** is the empty distance charged to the voyage, as a
+  share of the laden distance: 100 % is a round voyage back to the load
+  port.
+- **Bunker exposure.** At constant hire the rate moves by
+  $\text{bunkers} / ((1-c)\,Q)$ per USD 1/t on the bunker price. On a voyage
+  charter that risk is the owner's; it reaches the charterer through the
+  next fixture.
+- **Speed** follows the cube law: daily consumption scales with the cube of
+  the speed. Slowing down saves fuel but keeps the ship longer, so slow
+  steaming pays when bunkers are dear relative to hire.
+- Transit days in the reference routes use the same convention (laden
+  service speed of the vessel class, 5 % sea margin, one day per canal), so
+  the Calculator's financing leg and the voyage estimate agree.
 
 ## Insurance
 
@@ -154,18 +186,45 @@ $$\text{margin} = NB - C \qquad \text{return on capital} = \frac{NB - C}{C} \tim
 breakeven is solved exactly from two evaluations: the freight (or sale
 price, or metal price) at which the margin is zero.
 
+## Market data: live and static
+
+With **Live market data** on, the figures that have a free public quote are
+fetched (delayed, refreshed every 15 minutes) and replace the static ones:
+
+| Figure | Live source | Conversion |
+|---|---|---|
+| Copper | COMEX front-month future | USD/lb × 2,204.62 = USD/t |
+| Gold, silver | COMEX front-month futures | USD/oz |
+| Crude benchmark | ICE Brent front month | proxy for the medium-sour delivered benchmark |
+| Iron ore 65 % Fe | SGX 62 % Fe CFR China front month | + USD 13 indicative grade premium |
+| Financing rate | SOFR, New York Fed | SOFR + the credit margin of the static rate |
+
+A quote that fails, is more than ten days old or falls outside plausibility
+bounds is dropped and the static figure is used in its place; the ticker
+marks each live figure with a green dot. Freight, port fees, smelter terms,
+bauxite and destination differentials have no free public quote and are
+static in both modes. COMEX copper can trade away from the LME price that
+concentrate contracts reference: overwrite the price to use your own.
+
+## Shareable links
+
+The Calculator's address bar always carries the case on screen as readable
+query parameters (commodity, route, direction, every cost input, assays,
+metal prices, smelter terms). Opening the link restores the same case
+whatever the data source, since every input is in the link.
+
 ## Assumptions & limits
 
-- Reference prices, freight rates and port fees are **static indicative
-  figures** at realistic mid-2020s levels, chosen for internal consistency
-  rather than day-accuracy. Live assessments are a planned extension behind
-  the same `PriceDataProvider` interface.
+- Static reference prices, freight rates and port fees are **indicative
+  figures** chosen for internal consistency rather than day-accuracy.
+- Vessel figures in the voyage estimate are indicative for the class
+  (modern eco tonnage, one fuel grade, no ECA fuel split).
 - Destination differentials and non-benchmark TC/RCs in the reference
   data are illustrative, not assessments; they are editable in the app.
 - Concentrates: the quotational period (QP), provisional/final invoicing
   and price participation are not modelled; prices are the QP average.
-- Demurrage/despatch, weather routing, bunker adjustment factors and FX are
-  out of scope of this version.
+- Demurrage/despatch, weather routing and FX are out of scope of this
+  version.
 - Insurance uses the market shortcut on the CIF value; the exact landed
   CIF, $(P_{FOB}+F)/(1-1.1\,r_{ins})$, differs by a few cents per tonne.
 """)

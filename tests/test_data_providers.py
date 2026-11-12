@@ -1,35 +1,34 @@
 """Data layer tests: the static reference data loads, validates against the
 Session 1 schemas, and flows end-to-end through the core engine. The live
-provider is a stub and must say so clearly.
+provider is tested in test_live_provider.py.
 
 The two end-to-end cases are checked against hand-computed figures using the
 values in ``data/reference/``:
 
 Iron ore, Morebaya -> Qingdao (Capesize), CFR 108 USD/dmt, 8.5 % moisture:
     freight 22.5 $/wmt / (1 - 0.085) = 24.590164 $/dmt | insurance 0 (CFR)
-    financing 108*6.5%/365*(34+30) = 1.230904 | ports: load 2.6 only
+    financing 108*6.5%/365*(40+30) = 1.346301 | ports: load 2.6 only
     commission 108*0.5% = 0.54 | quality 0.5*1.9 - 0 - 0.5*0.6 = 0.65
-    netback = 108 - 24.590164 - 1.230904 - 2.6 - 0.54 + 0.65 = 79.688932
+    netback = 108 - 24.590164 - 1.346301 - 2.6 - 0.54 + 0.65 = 79.573535
 
 Crude oil, Ras Tanura -> Ningbo (VLCC), CIF 78 USD/bbl:
     freight 1.90 | insurance 78*1.10*0.25% = 0.2145
-    financing 78*6.0%/365*(22+30) = 0.666740 | ports: load 0.18 only
+    financing 78*6.0%/365*(21+30) = 0.653918 | ports: load 0.18 only
     commission 78*0.25% = 0.195 | quality 2.2*0.3 - (-0.6)*0.9 = 1.20
-    netback = 78 - 1.9 - 0.2145 - 0.666740 - 0.18 - 0.195 + 1.20 = 76.043760
+    netback = 78 - 1.9 - 0.2145 - 0.653918 - 0.18 - 0.195 + 1.20 = 76.056582
 
 Bauxite, Kamsar -> Yantai (Capesize), CIF 72 USD/dmt, 11 % moisture:
     freight 23 $/wmt / 0.89 = 25.842697 | insurance 72*1.10*0.35% = 0.2772
-    financing 72*6.5%/365*(35+30) = 0.833425 | ports: load 2.0 only
+    financing 72*6.5%/365*(37+30) = 0.859068 | ports: load 2.0 only
     commission 72*0.5% = 0.36 | quality 1.0*1.5 - 0 = 1.50
-    netback = 72 - 25.842697 - 0.2772 - 0.833425 - 2.0 - 0.36 + 1.50 = 44.186678
+    netback = 72 - 25.842697 - 0.2772 - 0.859068 - 2.0 - 0.36 + 1.50 = 44.161035
 """
 
 import pytest
 
 from netback.core.netback import compute_netback
 from netback.core.quality_adjustment import get_adjustment_fn
-from netback.data.providers import (LiveDataProvider, PriceDataProvider,
-                                    StaticDataProvider)
+from netback.data.providers import StaticDataProvider
 from netback.models.schemas import CommodityProfile, CostInputs, Route
 
 
@@ -132,11 +131,11 @@ def test_iron_ore_end_to_end_netback(provider):
 
     assert result.freight_cost == pytest.approx(24.590164, abs=0.005)
     assert result.insurance_cost == 0.0
-    assert result.financing_cost == pytest.approx(1.230904, abs=0.005)
+    assert result.financing_cost == pytest.approx(1.346301, abs=0.005)
     assert result.port_fees_total == pytest.approx(2.6, abs=0.005)
     assert result.commission_cost == pytest.approx(0.54, abs=0.005)
     assert result.quality_adjustment == pytest.approx(0.65, abs=0.005)
-    assert result.result_price == pytest.approx(79.688932, abs=0.005)
+    assert result.result_price == pytest.approx(79.573535, abs=0.005)
 
 
 def test_crude_oil_end_to_end_netback(provider):
@@ -147,7 +146,7 @@ def test_crude_oil_end_to_end_netback(provider):
 
     assert result.quality_adjustment == pytest.approx(1.20, abs=0.005)
     assert result.insurance_cost == pytest.approx(0.2145, abs=0.005)
-    assert result.result_price == pytest.approx(76.043760, abs=0.005)
+    assert result.result_price == pytest.approx(76.056582, abs=0.005)
 
 
 def test_bauxite_end_to_end_netback(provider):
@@ -159,7 +158,7 @@ def test_bauxite_end_to_end_netback(provider):
     assert result.freight_cost == pytest.approx(25.842697, abs=0.005)
     assert result.insurance_cost == pytest.approx(0.2772, abs=0.005)
     assert result.quality_adjustment == pytest.approx(1.50, abs=0.005)
-    assert result.result_price == pytest.approx(44.186678, abs=0.005)
+    assert result.result_price == pytest.approx(44.161035, abs=0.005)
 
 
 def test_landed_cost_mode_also_flows(provider):
@@ -198,24 +197,3 @@ def test_skeleton_profile_has_no_full_reference_data(provider):
     with pytest.raises(KeyError, match="skeleton"):
         provider.get_default_cost_inputs("lithium_spodumene", "morebaya_qingdao")
     assert provider.list_routes("lithium_spodumene") == []
-
-
-# --- live provider stub ------------------------------------------------------
-
-def test_live_provider_is_a_stub():
-    live = LiveDataProvider()
-    assert isinstance(live, PriceDataProvider)
-    route = Route(load_port="A", discharge_port="B", distance_nm=1,
-                  transit_days=1, vessel_type="VLCC")
-    for call in (lambda: live.list_commodities(),
-                 lambda: live.get_commodity_profile("iron_ore"),
-                 lambda: live.get_benchmark_price("iron_ore"),
-                 lambda: live.get_metal_prices("copper_concentrate"),
-                 lambda: live.get_destination_market("lobito_qingdao"),
-                 lambda: live.list_routes(),
-                 lambda: live.get_route("morebaya_qingdao"),
-                 lambda: live.get_freight_rate(route),
-                 lambda: live.get_port_fee("Qingdao", "load"),
-                 lambda: live.get_default_cost_inputs("iron_ore", "morebaya_qingdao")):
-        with pytest.raises(NotImplementedError, match="not implemented"):
-            call()

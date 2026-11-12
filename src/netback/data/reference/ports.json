@@ -4,78 +4,104 @@
     "country": "Guinea",
     "load_fee_per_unit": 2.6,
     "discharge_fee_per_unit": 2.6,
+    "lat": 9.33,
+    "lon": -13.45,
     "_sources": "Simandou export terminal, Forecariah/Morebaya; new-build transhipment loading, dry bulk USD/dmt"
   },
   "Qingdao": {
     "country": "China",
     "load_fee_per_unit": 1.9,
     "discharge_fee_per_unit": 1.9,
+    "lat": 36.07,
+    "lon": 120.32,
     "_sources": "Main China iron ore discharge hub, dry bulk USD/dmt"
   },
   "Rotterdam": {
     "country": "Netherlands",
     "load_fee_per_unit": 2.1,
     "discharge_fee_per_unit": 2.1,
+    "lat": 51.95,
+    "lon": 4.05,
     "_sources": "EMO dry bulk terminal orders of magnitude, USD/dmt"
   },
   "Ras Tanura": {
     "country": "Saudi Arabia",
     "load_fee_per_unit": 0.18,
     "discharge_fee_per_unit": 0.18,
+    "lat": 26.65,
+    "lon": 50.17,
     "_sources": "Gulf crude loading terminal, USD/bbl"
   },
   "Ningbo": {
     "country": "China",
     "load_fee_per_unit": 0.14,
     "discharge_fee_per_unit": 0.14,
+    "lat": 29.93,
+    "lon": 121.85,
     "_sources": "Ningbo-Zhoushan crude discharge, USD/bbl"
   },
   "Kamsar": {
     "country": "Guinea",
     "load_fee_per_unit": 2.0,
     "discharge_fee_per_unit": 2.0,
+    "lat": 10.65,
+    "lon": -14.62,
     "_sources": "CBG/Boke bauxite export port, dry bulk USD/dmt"
   },
   "Yantai": {
     "country": "China",
     "load_fee_per_unit": 1.8,
     "discharge_fee_per_unit": 1.8,
+    "lat": 37.57,
+    "lon": 121.4,
     "_sources": "Main Shandong bauxite discharge port, dry bulk USD/dmt"
   },
   "Lobito": {
     "country": "Angola",
     "load_fee_per_unit": 6.0,
     "discharge_fee_per_unit": 6.0,
+    "lat": -12.35,
+    "lon": 13.55,
     "_sources": "Lobito mineral terminal, concentrate handling USD/dmt"
   },
   "Dar es Salaam": {
     "country": "Tanzania",
     "load_fee_per_unit": 8.0,
     "discharge_fee_per_unit": 8.0,
+    "lat": -6.83,
+    "lon": 39.3,
     "_sources": "Concentrate export incl. congestion-heavy handling, USD/dmt"
   },
   "Huelva": {
     "country": "Spain",
     "load_fee_per_unit": 3.5,
     "discharge_fee_per_unit": 3.5,
+    "lat": 37.2,
+    "lon": -6.95,
     "_sources": "Atlantic Copper smelter port, USD/dmt"
   },
   "Fangchenggang": {
     "country": "China",
     "load_fee_per_unit": 3.0,
     "discharge_fee_per_unit": 3.0,
+    "lat": 21.6,
+    "lon": 108.35,
     "_sources": "Guangxi concentrate discharge, USD/dmt"
   },
   "Khalifa Port": {
     "country": "United Arab Emirates",
     "load_fee_per_unit": 2.2,
     "discharge_fee_per_unit": 2.2,
+    "lat": 24.82,
+    "lon": 54.65,
     "_sources": "Al Taweelah bulk berth, dry bulk USD/dmt"
   },
   "Sikka": {
     "country": "India",
     "load_fee_per_unit": 0.15,
     "discharge_fee_per_unit": 0.15,
+    "lat": 22.43,
+    "lon": 69.83,
     "_sources": "Jamnagar SPM crude discharge, USD/bbl"
   }
 }

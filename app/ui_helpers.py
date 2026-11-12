@@ -6,6 +6,8 @@ spec keys), and fall back to manual inputs when the reference data has no
 entry for the selected commodity (config-skeleton profiles).
 """
 
+import os
+from datetime import datetime, timezone
 from typing import Any
 
 import plotly.graph_objects as go
@@ -15,6 +17,8 @@ import theme
 from netback.core.concentrate import value_concentrate
 from netback.core.netback import compute_result
 from netback.core.sensitivity import SensitivityRow
+from netback.core.voyage import VoyageInputs, tce_from_freight
+from netback.data.providers.live import LiveDataProvider
 from netback.data.providers.static import StaticDataProvider
 from netback.models.schemas import (DELIVERY_TERM_LEGS, CommodityProfile,
                                     CostInputs, NetbackResult, Route)
@@ -59,9 +63,74 @@ _PRICE_UNITS = {"pct": "USD/t", "g_per_t": "USD/oz"}
 _RC_UNITS = {"pct": "USD/lb payable", "g_per_t": "USD/oz payable"}
 
 
+# Live quotes are on by default; NETBACK_LIVE=0 starts the app on the static
+# reference data (used by the test suite, which must not touch the network).
+LIVE_DEFAULT = os.environ.get("NETBACK_LIVE", "1") != "0"
+LIVE_TTL_SECONDS = 900
+LIVE_RETRY_SECONDS = 60
+
+
 @st.cache_resource
-def get_provider() -> StaticDataProvider:
+def _static_provider() -> StaticDataProvider:
     return StaticDataProvider()
+
+
+@st.cache_resource(ttl=LIVE_TTL_SECONDS, show_spinner="Loading market data")
+def _live_provider() -> LiveDataProvider:
+    """One fetch shared by every session, refreshed every 15 minutes."""
+    return LiveDataProvider().refresh()
+
+
+def is_live_mode() -> bool:
+    return bool(st.session_state.get("_live", LIVE_DEFAULT))
+
+
+def source_tag() -> str:
+    """Part of every seeded widget key: switching the data source must
+    re-seed the inputs, not keep figures from the other source."""
+    return "live" if is_live_mode() else "ref"
+
+
+def get_provider() -> StaticDataProvider:
+    if not is_live_mode():
+        return _static_provider()
+    provider = _live_provider()
+    age = (datetime.now(timezone.utc) - provider.fetched_at).total_seconds()
+    if not provider.is_live and age > LIVE_RETRY_SECONDS:
+        _live_provider.clear()          # nothing answered: do not sit on it
+        provider = _live_provider()
+    return provider
+
+
+def _on_source_change() -> None:
+    """Switching the data source starts from that source's figures: the
+    Calculator case kept across pages (and in the URL) is dropped."""
+    state = st.session_state
+    state["_live"] = state["_live_toggle"]
+    for key in ("_calc_last", "_calc_seed", "_calc_url", "_calc_pending"):
+        state.pop(key, None)
+    state["_calc_nonce"] = state.get("_calc_nonce", 0) + 1
+    st.query_params.clear()
+
+
+def setup_page(name: str) -> StaticDataProvider:
+    """Shared page chrome, right after ``theme.inject()``: records page
+    entry (``_entered`` is True on the first run after arriving from another
+    page), renders the data-source toggle and the ticker, returns the
+    provider for the selected source."""
+    state = st.session_state
+    state["_entered"] = state.get("_page") != name
+    state["_page"] = name
+    st.sidebar.toggle(
+        "Live market data", value=is_live_mode(), key="_live_toggle",
+        on_change=_on_source_change,
+        help="On: metal prices, Brent, iron ore and SOFR from public delayed "
+             "quotes, refreshed every 15 minutes. Off: the static reference "
+             "set. Freight, port fees and smelter terms are static either "
+             "way. Switching resets the inputs to that source.")
+    provider = get_provider()
+    theme.ticker(provider)
+    return provider
 
 
 def chart(fig: go.Figure) -> None:
@@ -123,9 +192,12 @@ def seed_inputs(provider: StaticDataProvider, commodity: str,
 
 
 def route_inputs(provider: StaticDataProvider, commodity: str, container,
-                 key_prefix: str = "") -> tuple[str | None, Route]:
+                 key_prefix: str = "", seed: dict[str, Any] | None = None
+                 ) -> tuple[str | None, Route]:
     """Route selection. Offers the provider's routes for this commodity;
-    when there are none, falls back to manual route entry."""
+    when there are none, falls back to manual route entry (``seed`` then
+    pre-fills the manual fields, e.g. from a shared link)."""
+    seed = seed or {}
     route_ids = provider.list_routes(commodity)
     if route_ids:
         route_id = container.selectbox(
@@ -138,16 +210,23 @@ def route_inputs(provider: StaticDataProvider, commodity: str, container,
                       "enter the voyage manually.")
     k = f"{key_prefix}{commodity}"
     route = Route(
-        load_port=container.text_input("Load port", "Load port", key=f"{k}_lp"),
-        discharge_port=container.text_input("Discharge port", "Discharge port",
-                                            key=f"{k}_dp"),
-        distance_nm=container.number_input("Distance (nm)", min_value=1.0,
-                                           value=5000.0, step=100.0,
-                                           format="%.0f", key=f"{k}_nm"),
-        transit_days=container.number_input("Transit days", min_value=0.5,
-                                            value=20.0, step=1.0, format="%.0f",
-                                            key=f"{k}_td"),
-        vessel_type=container.text_input("Vessel type", "Panamax", key=f"{k}_vt"),
+        load_port=container.text_input(
+            "Load port", seed.get("load_port", "Load port"),
+            key=f"{k}_lp") or "Load port",
+        discharge_port=container.text_input(
+            "Discharge port", seed.get("discharge_port", "Discharge port"),
+            key=f"{k}_dp") or "Discharge port",
+        distance_nm=container.number_input(
+            "Distance (nm)", min_value=1.0,
+            value=max(1.0, float(seed.get("distance_nm", 5000.0))),
+            step=100.0, format="%.0f", key=f"{k}_nm"),
+        transit_days=container.number_input(
+            "Transit days", min_value=0.5,
+            value=max(0.5, float(seed.get("transit_days", 20.0))),
+            step=1.0, format="%.0f", key=f"{k}_td"),
+        vessel_type=container.text_input(
+            "Vessel type", seed.get("vessel_type", "Panamax"),
+            key=f"{k}_vt") or "Panamax",
     )
     return None, route
 
@@ -170,12 +249,15 @@ def quality_inputs(profile: CommodityProfile, seed: dict[str, Any], container,
 
 
 def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
-                     mode: str = "netback", key_prefix: str = "") -> CostInputs:
+                     mode: str = "netback", key_prefix: str = "",
+                     voyage: VoyageInputs | None = None,
+                     vessel_type: str = "") -> CostInputs:
     """Every ``CostInputs`` field as a widget seeded from ``seed``, grouped in
     collapsible sections. Concentrates get no price widget: their delivered
     value is computed from the assays (see ``concentrate_inputs``). Quality
     fields come from the profile's benchmark spec, so a new commodity needs
-    no UI change."""
+    no UI change. With ``voyage`` (the route's reference voyage estimate) the
+    freight field shows the time-charter equivalent it implies."""
     k = key_prefix
     is_concentrate = profile.concentrate_terms is not None
 
@@ -204,6 +286,12 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
         key=f"{k}freight",
         help=("Quoted per wet tonne; converted to the dry pricing basis with "
               "the cargo moisture." if profile.freight_moisture_key else None))
+    if voyage is not None:
+        tce = tce_from_freight(voyage, freight).tce
+        costs.caption(f"Pays the ship **${tce:,.0f}/day** (TCE, {vessel_type} "
+                      "round voyage).")
+        costs.page_link("pages/3_Freight.py",
+                        label="Open the voyage estimate →")
     left, right = costs.columns(2)
     load_fee = left.number_input(
         "Load fee", min_value=0.0,
@@ -451,15 +539,21 @@ def responsive_waterfall(result: NetbackResult, unit: str) -> None:
 
 
 def cost_share_figure(result: NetbackResult, unit: str) -> go.Figure:
-    """Proportional horizontal bar: each cost leg's share of total voyage
-    costs (excludes the quality adjustment, which is not a cost)."""
-    legs = [(label, value) for label, value in [
+    """Each cost leg's share of total voyage costs (excludes the quality
+    adjustment, which is not a cost)."""
+    return share_bar_figure([
         ("Freight", result.freight_cost),
         ("Financing", result.financing_cost),
         ("Port fees", result.port_fees_total),
         ("Insurance", result.insurance_cost),
         ("Commission", result.commission_cost),
-    ] if value > 0]
+    ], unit)
+
+
+def share_bar_figure(legs: list[tuple[str, float]], unit: str) -> go.Figure:
+    """Proportional horizontal bar: each positive leg's share of the total,
+    labelled with its value per ``unit``."""
+    legs = [(label, value) for label, value in legs if value > 0]
     total = sum(v for _, v in legs) or 1.0
 
     fig = go.Figure()
@@ -486,31 +580,34 @@ def cost_share_figure(result: NetbackResult, unit: str) -> go.Figure:
     )
 
 
-def tornado_figure(base: float, rows: list[SensitivityRow], unit: str) -> go.Figure:
+def tornado_figure(base: float, rows: list[SensitivityRow], unit: str,
+                   decimals: int = 2, what: str = "result") -> go.Figure:
     """Tornado chart: change in the result when each driver is shocked down
     (muted bar) and up (amber bar), largest swing on top."""
     rows = rows[::-1]
     labels = [f"{r.driver}  <span style='color:{theme.MUTED}'>{r.shock}</span>"
               for r in rows]
     span = max((r.swing for r in rows), default=1.0)
+    num = f"+,.{decimals}f"
     common = dict(orientation="h", y=labels, textposition="outside",
                   textfont=dict(family=theme.MONO, size=10, color=theme.TEXT),
                   cliponaxis=False)
     fig = go.Figure([
         go.Bar(name="Driver down", x=[r.delta_low for r in rows],
-               text=[f"{r.delta_low:+,.2f}" for r in rows],
+               text=[format(r.delta_low, num) for r in rows],
                marker_color=NEUTRAL_BAR,
-               hovertemplate="Driver down: %{x:+,.2f}<extra></extra>", **common),
+               hovertemplate=f"Driver down: %{{x:{num}}}<extra></extra>", **common),
         go.Bar(name="Driver up", x=[r.delta_high for r in rows],
-               text=[f"{r.delta_high:+,.2f}" for r in rows],
+               text=[format(r.delta_high, num) for r in rows],
                marker_color=theme.AMBER,
-               hovertemplate="Driver up: %{x:+,.2f}<extra></extra>", **common),
+               hovertemplate=f"Driver up: %{{x:{num}}}<extra></extra>", **common),
     ])
     return terminal_layout(
         fig, barmode="overlay", height=90 + 38 * len(rows),
         xaxis=dict(range=[-span * 1.8, span * 1.8], zeroline=True,
                    zerolinecolor=theme.MUTED,
-                   title=f"Change in result, USD/{unit} (base {base:,.2f})",
+                   title=f"Change in {what}, USD/{unit} "
+                         f"(base {format(base, num[1:])})",
                    title_font=dict(size=11, color=theme.MUTED)),
         yaxis=dict(automargin=True,
                    tickfont=dict(family=theme.SANS, color=theme.TEXT, size=12)),

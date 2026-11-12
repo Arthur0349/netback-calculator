@@ -12,6 +12,7 @@ matching the convention of the quality-adjustment registry.
 
 from abc import ABC, abstractmethod
 
+from netback.core.voyage import VoyageInputs
 from netback.models.schemas import CommodityProfile, CostInputs, Route
 
 Direction = str  # "load" | "discharge"
@@ -69,3 +70,14 @@ class PriceDataProvider(ABC):
         using reference defaults for every field the caller does not override.
         ``price_basis`` defaults to the commodity's benchmark price (for
         concentrates: the valuation of the default cargo assays)."""
+
+    @abstractmethod
+    def get_voyage_inputs(self, route_id: str) -> VoyageInputs:
+        """Reference voyage estimate for a route: the vessel class of the
+        route, its distance, bunker price, port and canal costs. Feeds
+        ``core.voyage`` (freight from hire, TCE from freight)."""
+
+    @abstractmethod
+    def get_route_path(self, route_id: str) -> list[tuple[float, float]]:
+        """Sea lane of a route as ``(lat, lon)`` points, load port first,
+        discharge port last. For maps only, not for distances."""

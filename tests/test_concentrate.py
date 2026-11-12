@@ -12,10 +12,10 @@ As 3 $ per 0.1 % above 0.2 %.
     As penalty  (0.35 - 0.2) / 0.1 = 1.5 steps x 3                =     4.50
     net invoice value = 3,519 + 158.1816 + 25.0776 - 0.3858 - 4.5 = 3,697.3734
 
-Netback Lobito -> Qingdao, CIF, 9.5 % moisture, 37 d transit + 30 d terms:
+Netback Lobito -> Qingdao, CIF, 9.5 % moisture, 38 d transit + 30 d terms:
     freight 45 / 0.905 = 49.7238 | insurance 3,697.37 x 1.10 x 0.15 % = 6.1007
-    financing 3,697.37 x 6.5 % / 365 x 67 = 44.1152 | load port 6.0
-    netback = 3,697.3734 - 49.7238 - 6.1007 - 44.1152 - 6.0 = 3,591.4337
+    financing 3,697.37 x 6.5 % / 365 x 68 = 44.7737 | load port 6.0
+    netback = 3,697.3734 - 49.7238 - 6.1007 - 44.7737 - 6.0 = 3,590.7752
 """
 
 import pytest
@@ -93,8 +93,8 @@ def test_copper_concentrate_end_to_end_netback(provider):
                                          profile, provider.get_metal_prices("copper_concentrate"))
     assert result.freight_cost == pytest.approx(49.7238, abs=0.001)
     assert result.insurance_cost == pytest.approx(6.1007, abs=0.001)
-    assert result.financing_cost == pytest.approx(44.1152, abs=0.001)
-    assert result.result_price == pytest.approx(3591.4337, abs=0.005)
+    assert result.financing_cost == pytest.approx(44.7737, abs=0.001)
+    assert result.result_price == pytest.approx(3590.7752, abs=0.005)
     # the waterfall starts from the payables, and quality is not double-counted
     assert result.price_build_up[0][0] == "Payable Cu"
     assert "Quality adjustment" not in [label for label, _ in result.breakdown]

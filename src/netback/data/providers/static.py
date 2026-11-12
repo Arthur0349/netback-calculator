@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from netback.core.concentrate import value_concentrate
+from netback.core.voyage import VoyageInputs
 from netback.data.providers.base import PriceDataProvider
 from netback.models.schemas import CommodityProfile, CostInputs, Route
 
@@ -43,6 +44,14 @@ class StaticDataProvider(PriceDataProvider):
     def _freight(self) -> dict[str, Any]:
         return _load("freight_rates.json")
 
+    @cached_property
+    def _vessels(self) -> dict[str, Any]:
+        return _load("vessels.json")
+
+    @cached_property
+    def _lanes(self) -> dict[str, Any]:
+        return _load("sea_lanes.json")
+
     def _spec(self, commodity: str) -> dict[str, Any]:
         try:
             return self._specs[commodity]
@@ -57,6 +66,16 @@ class StaticDataProvider(PriceDataProvider):
         """Date label of the reference figures (documentation key)."""
         raw = json.loads((self._dir / "commodity_specs.json").read_text())
         return raw.get("_as_of", "")
+
+    @property
+    def is_live(self) -> bool:
+        return False
+
+    @property
+    def data_note(self) -> str:
+        """One sentence on where the figures come from, for page captions."""
+        return ("Reference prices, freight and port fees are static, "
+                f"indicative figures as of {self.as_of}.")
 
     def list_commodities(self) -> list[str]:
         return sorted(self._specs)
@@ -174,3 +193,56 @@ class StaticDataProvider(PriceDataProvider):
             commission_pct=defaults["commission_pct"],
             delivery_term=defaults.get("delivery_term", "CIF"),
         )
+
+    # --- voyage estimate and map ---------------------------------------------
+
+    @property
+    def bunker_price(self) -> float:
+        """Reference bunker price, USD per tonne of fuel."""
+        return float(self._vessels["bunkers"]["vlsfo_usd_per_t"])
+
+    def get_vessel(self, vessel_type: str) -> dict[str, Any]:
+        """Vessel class reference card (name, cargo unit, intake, speeds,
+        consumption, port time and costs)."""
+        classes = self._vessels["classes"]
+        try:
+            return dict(classes[vessel_type])
+        except KeyError:
+            raise KeyError(
+                f"Unknown vessel class {vessel_type!r}. "
+                f"Available: {sorted(classes)}"
+            ) from None
+
+    def get_voyage_inputs(self, route_id: str) -> VoyageInputs:
+        route = self.get_route(route_id)
+        vessel = self.get_vessel(route.vessel_type)
+        fields = {k: v for k, v in vessel.items()
+                  if k not in ("name", "cargo_unit")}
+        overrides = {k: v for k, v in
+                     self._routes[route_id].get("voyage", {}).items()
+                     if not k.startswith("_")}
+        return VoyageInputs(**{
+            **fields,
+            "distance_nm": route.distance_nm,
+            "bunker_price": self.bunker_price,
+            "commission_pct": self._vessels["commission_pct"],
+            "sea_margin_pct": self._vessels["sea_margin_pct"],
+            **overrides,
+        })
+
+    def get_port_position(self, port: str) -> tuple[float, float]:
+        try:
+            entry = self._ports[port]
+        except KeyError:
+            raise KeyError(
+                f"Unknown port {port!r}. Available: {sorted(self._ports)}"
+            ) from None
+        return float(entry["lat"]), float(entry["lon"])
+
+    def get_route_path(self, route_id: str) -> list[tuple[float, float]]:
+        route = self.get_route(route_id)
+        waypoints = self._lanes["waypoints"]
+        lane = self._lanes["lanes"].get(route_id, [])
+        return ([self.get_port_position(route.load_port)]
+                + [(float(waypoints[w][0]), float(waypoints[w][1])) for w in lane]
+                + [self.get_port_position(route.discharge_port)])

@@ -1,0 +1,42 @@
+{
+  "_notes": "What the live provider overrides, and with which public quote. Symbols are Yahoo Finance front-month futures (delayed, no API key). 'scale' and 'offset' convert the quote to the unit and grade of the reference data: value = quote x scale + offset. 'min' / 'max' are plausibility bounds on the converted value: a quote outside them is discarded and the static figure is used. Everything not listed here (freight, port fees, TC/RC, bauxite, destination differentials) has no free public quote and stays static.",
+  "max_quote_age_days": 10,
+  "sofr_reference_pct": 3.9,
+  "_sofr_basis": "SOFR level the static financing rates were set against (early Nov 2026). Live financing rate = static rate + (live SOFR - this reference), i.e. live SOFR plus the same credit margin.",
+  "metals": {
+    "Cu": {
+      "symbol": "HG=F",
+      "scale": 2204.62262,
+      "min": 4000,
+      "max": 30000,
+      "label": "COMEX copper, front month, converted from USD/lb"
+    },
+    "Au": {
+      "symbol": "GC=F",
+      "min": 1000,
+      "max": 12000,
+      "label": "COMEX gold, front month"
+    },
+    "Ag": {
+      "symbol": "SI=F",
+      "min": 10,
+      "max": 250,
+      "label": "COMEX silver, front month"
+    }
+  },
+  "benchmarks": {
+    "crude_oil": {
+      "symbol": "BZ=F",
+      "min": 20,
+      "max": 250,
+      "label": "ICE Brent, front month, as a proxy for the medium-sour delivered benchmark"
+    },
+    "iron_ore": {
+      "symbol": "TIO=F",
+      "offset": 13.0,
+      "min": 40,
+      "max": 300,
+      "label": "SGX 62 % Fe CFR China, front month, plus an indicative USD 13 premium for 65 % Fe"
+    }
+  }
+}

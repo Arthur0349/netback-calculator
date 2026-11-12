@@ -17,8 +17,11 @@ TC/RC, penalties.
 
 | | |
 |---|---|
-| **Calculator** | One voyage end to end: waterfall from price (or payable metals) to FOB netback, cost structure, tornado sensitivity, deal margin with breakeven freight and price, one-page PDF trade sheet |
+| **Calculator** | One voyage end to end: waterfall from price (or payable metals) to FOB netback, cost structure, tornado sensitivity, deal margin with breakeven freight and price, one-page PDF trade sheet, shareable link to the exact case |
 | **Arbitrage matrix** | One cargo, every outlet, each with its own price or smelter terms, freight and port costs; ranked on FOB netback with the lead over the runner-up and the freight headroom before the ranking flips. Every cell editable |
+| **Freight** | Voyage estimate: from hire, bunkers, port and canal costs to a freight rate, or from a quoted rate back to the TCE it pays the ship; bunker exposure, slow-steaming sensitivity; pushes the rate into the Calculator |
+| **Route map** | Every trade lane drawn along its sea route, coloured by netback rank |
+| **Live market data** | Copper, gold, silver, Brent, iron ore and SOFR from public delayed quotes, with a per-figure fallback to the static reference set |
 | **Methodology** | Every formula and convention, no black box |
 
 **Home**
@@ -30,6 +33,9 @@ TC/RC, penalties.
 
 **Arbitrage matrix**
 ![Arbitrage page](docs/screenshots/arbitrage.png)
+
+**Freight: voyage estimate**
+![Freight page: rate build-up, bunker exposure, sensitivities](docs/screenshots/freight.png)
 
 **Trade sheet (PDF export)**
 
@@ -47,6 +53,9 @@ TC/RC, penalties.
   the assay minus a minimum deduction; RC per payable lb (base) or oz
   (precious); pro rata penalties; negative TC/RC supported (2026 benchmark:
   USD 0/dmt and 0 c/lb, spot well below zero).
+- **Freight is built, not assumed.** A voyage estimate turns hire, bunkers,
+  port and canal costs into USD per tonne, and a quoted rate into its TCE;
+  speed follows the cube law. Reference transit days use the same speeds.
 - **Sensitivity and breakeven.** One driver shocked at a time; breakevens
   solved exactly (the result is linear in freight and price).
 
@@ -66,29 +75,36 @@ concentrate terms) in
 [`commodity_specs.json`](src/netback/data/reference/commodity_specs.json).
 Spodumene is the proof: a JSON edit, no code change.
 
-**About the numbers.** Prices, freight and port fees are static, indicative
-figures (as of Nov 2026), chosen for internal consistency. Destination price
-differentials and non-benchmark TC/RCs are illustrative assumptions. Every
-input is editable in the app; a live source plugs in behind the
-`PriceDataProvider` interface without touching the engine or the UI.
+**About the numbers.** With live data on, metal prices, Brent, iron ore and
+SOFR come from public delayed quotes (Yahoo Finance futures, New York Fed);
+a quote that fails or looks wrong falls back to the static figure, one
+figure at a time. Freight, port fees, smelter terms and bauxite are static,
+indicative figures (as of Nov 2026), chosen for internal consistency.
+Destination price differentials, non-benchmark TC/RCs and vessel figures are
+illustrative assumptions. Every input is editable in the app. Set
+`NETBACK_LIVE=0` to start on the static set.
 
 ## Architecture
 
 ```
 src/netback/
 ├── core/        # pure functions, no I/O: cost legs, concentrate valuation,
-│                # netback orchestrator, arbitrage ranking, sensitivity
+│                # netback orchestrator, arbitrage ranking, sensitivity,
+│                # voyage estimate (freight from hire, TCE from freight)
 ├── models/      # pydantic schemas
 ├── data/
-│   ├── providers/   # PriceDataProvider ABC, static impl, live stub
-│   └── reference/   # JSON tables: ports, routes, freight, specs
-└── reporting/   # PDF trade sheet (fpdf2)
+│   ├── providers/   # PriceDataProvider ABC, static tables, live quotes
+│   └── reference/   # JSON tables: ports, routes, sea lanes, freight,
+│                    # vessels, specs, live sources
+├── reporting/   # PDF trade sheet (fpdf2)
+└── sharing.py   # a case <-> URL query parameters
 app/             # Streamlit UI: orchestration only, no business logic
 tests/           # pytest, hand-computed reference cases per module
 ```
 
 Strict separation of calculation / data / presentation: `core/` makes no
-network calls and never imports Streamlit. Original design brief in
+network calls and never imports Streamlit; the only network code is the
+quote fetcher behind the live provider. Original design brief in
 [`docs/architecture.md`](docs/architecture.md).
 
 ## Quickstart
@@ -112,10 +128,10 @@ pytest
 | Layer | Choice |
 |---|---|
 | Engine | Python 3.10+, pure functions, pydantic v2 models |
-| Data | JSON reference tables behind a `PriceDataProvider` ABC |
-| UI | Streamlit multipage app, Plotly charts, responsive down to phone width |
+| Data | JSON reference tables behind a `PriceDataProvider` ABC; live quotes over HTTPS with the standard library, no API key |
+| UI | Streamlit multipage app, Plotly charts and route map, responsive down to phone width |
 | Export | fpdf2, no browser or image backend needed |
-| Quality | pytest (70 tests, hand-computed reference cases), GitHub Actions on every push |
+| Quality | pytest (102 tests: hand-computed reference cases, live provider with injected fetchers, every page run headless), GitHub Actions on every push |
 
 ## Roadmap
 
@@ -123,9 +139,13 @@ pytest
 - [x] Concentrate valuation: payables, TC/RC, penalties
 - [x] Arbitrage matrix with per-destination pricing
 - [x] Sensitivity, breakeven, deal check, PDF trade sheet
-- [ ] Live data (metal prices, crude, SOFR) behind the provider interface
+- [x] Live data (metal prices, crude, iron ore, SOFR) behind the provider interface
+- [x] Voyage estimate: freight from hire, TCE from freight, bunker exposure
+- [x] Route map and shareable case links
 - [ ] Quotational period and provisional/final invoicing for concentrates
 - [ ] Demurrage and laytime
+- [ ] Hedging layer: hedged vs unhedged P&L, basis risk
+- [ ] West African softs in containers (cocoa, cashew ex Abidjan / San Pedro)
 
 ## License
 

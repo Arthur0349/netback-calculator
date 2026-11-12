@@ -1,21 +1,24 @@
+from urllib.parse import urlencode
+
 import streamlit as st
 
 import theme
+from case_state import (adopt_case, case_seed, key_prefix, profile_with_case,
+                        seed_with_case, sync_case)
 from netback.core.sensitivity import breakeven, tornado
 from netback.reporting.trade_sheet import build_trade_sheet
 from ui_helpers import (MODE_HELP, MODE_LABELS, chart, commodity_selectbox,
                         compute, concentrate_details_table, concentrate_inputs,
                         cost_inputs_form, cost_share_figure, freight_unit,
-                        get_provider, money, responsive_waterfall,
-                        result_metric_cards, route_inputs, seed_inputs,
-                        tornado_figure)
+                        money, responsive_waterfall, result_metric_cards,
+                        route_inputs, seed_inputs, setup_page, tornado_figure)
 
 st.set_page_config(page_title="Calculator · Netback Calculator",
                    page_icon="🚢", layout="wide")
 theme.inject()
 
-provider = get_provider()
-theme.ticker(provider)
+provider = setup_page("calculator")
+adopt_case(provider)        # shared link, return from another page, hand-over
 
 # --- inputs --------------------------------------------------------------------
 
@@ -30,19 +33,31 @@ with st.sidebar:
         mode = st.radio("Direction", list(MODE_LABELS), horizontal=True,
                         format_func=MODE_LABELS.get, key="mode", help=MODE_HELP)
 
-    route_id, route = route_inputs(provider, commodity, st)
+    manual = case_seed(commodity, None)
+    route_id, route = route_inputs(
+        provider, commodity, st,
+        seed={**manual.route_text, **manual.route_values} if manual else None)
+    voyage = None
     if route_id is not None:
         # destination-specific terms (e.g. the smelter's TC/RCs)
         profile = provider.get_commodity_profile(commodity, route_id)
+        try:
+            voyage = provider.get_voyage_inputs(route_id)
+        except KeyError:
+            pass                    # no reference vessel class for this route
 
-    key = f"{commodity}_{route_id}_"
-    seed = seed_inputs(provider, commodity, route_id)
-    inputs = cost_inputs_form(profile, seed, st, mode=mode, key_prefix=key)
+    case = case_seed(commodity, route_id)
+    key = key_prefix(commodity, route_id)
+    seed = seed_with_case(seed_inputs(provider, commodity, route_id), case)
+    inputs = cost_inputs_form(profile, seed, st, mode=mode, key_prefix=key,
+                              voyage=voyage, vessel_type=route.vessel_type)
 
     metal_prices = None
     if is_concentrate:
+        profile, metal_prices = profile_with_case(
+            profile, provider.get_metal_prices(commodity), case)
         profile, metal_prices = concentrate_inputs(
-            profile, provider.get_metal_prices(commodity), st, key_prefix=key)
+            profile, metal_prices, st, key_prefix=key)
 
 result = compute(inputs, route, profile, mode, metal_prices)
 unit = profile.unit
@@ -77,11 +92,20 @@ chart(tornado_figure(base, rows, unit))
 
 st.subheader("Deal check")
 days = route.transit_days + inputs.payment_terms_days
+
+
+def deal_seed(default: float) -> float:
+    """Deal price from the restored case when there is one."""
+    if case is not None and case.deal_price is not None:
+        return float(case.deal_price)
+    return float(round(max(default, 0.0), 2))
+
+
 left, _ = st.columns([1, 3])
 if mode == "netback":
     other = left.number_input(
         f"FOB purchase cost (USD/{unit})", min_value=0.0,
-        value=float(round(result.result_price * 0.97, 2)), format="%.2f",
+        value=deal_seed(result.result_price * 0.97), format="%.2f",
         key=f"{key}deal_cost",
         help="What the cargo costs you at the load port. The margin is the "
              "FOB netback minus this cost.")
@@ -91,7 +115,7 @@ if mode == "netback":
 else:
     other = left.number_input(
         f"Delivered sale price (USD/{unit})", min_value=0.0,
-        value=float(round(result.result_price * 1.03, 2)), format="%.2f",
+        value=deal_seed(result.result_price * 1.03), format="%.2f",
         key=f"{key}deal_sale",
         help="What the buyer pays delivered. The margin is this price minus "
              "the landed cost.")
@@ -155,11 +179,31 @@ with st.expander("Full breakdown", expanded=not is_concentrate):
          for label, value in lines if value != 0 or label == "Base price"],
     )
 
-st.download_button(
+left, right, _ = st.columns([1.15, 1, 2.2], vertical_alignment="center")
+left.download_button(
     "Download trade sheet (PDF)",
-    data=build_trade_sheet(result, inputs, route, profile, metal_prices, rows,
-                           as_of=provider.as_of),
+    data=build_trade_sheet(result, inputs, route, profile, metal_prices,
+                           rows, as_of=provider.as_of,
+                           live=provider.is_live),
     file_name=(f"trade-sheet-{commodity}-{route.load_port}-"
                f"{route.discharge_port}.pdf").lower().replace(" ", "-"),
-    mime="application/pdf", type="primary",
+    mime="application/pdf", type="primary", width="stretch",
     help="One page: headline figures, waterfall, assumptions, sensitivities.")
+
+# --- shareable link ------------------------------------------------------------
+# The URL always carries the case on screen, so the address bar is the link.
+
+params = sync_case(commodity, route_id, mode, inputs, route, profile,
+                   metal_prices, other)
+with right.popover("Share this case", width="stretch"):
+    try:
+        base_url = st.context.url.split("?")[0]
+    except Exception:               # no browser context (tests)
+        base_url = ""
+    st.markdown("**Link to this exact case**")
+    st.code(f"{base_url}?{urlencode(params)}", language=None, wrap_lines=True)
+    st.caption("Every input on screen is in the link: whoever opens it sees "
+               "the same cargo, costs and result. The address bar carries "
+               "the same link and follows your edits.")
+
+st.caption(provider.data_note)

@@ -1,12 +1,12 @@
 [project]
 name = "netback-calculator"
-version = "0.2.0"
+version = "0.3.0"
 description = "Freight rate netback / landed cost calculator for bulk and tanker commodity trades"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "streamlit>=1.35",
+    "streamlit>=1.50",
     "plotly>=5.20",
     "pydantic>=2.6",
     "pandas>=2.0",

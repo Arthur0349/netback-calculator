@@ -48,12 +48,12 @@ def test_tornado_concentrate_drivers():
                          p.get_commodity_profile(c, rid),
                          metal_prices=p.get_metal_prices(c))
     by = {r.driver: r for r in rows}
-    assert base == pytest.approx(3591.4337, abs=0.01)
+    assert base == pytest.approx(3590.7752, abs=0.01)
     assert rows[0].driver == "Cu price"
     assert "Delivered price" not in by
     # TC is a straight deduction, less the insurance and financing it carried
     assert by["TC"].delta_high < 0 < by["TC"].delta_low
-    assert by["TC"].delta_low == pytest.approx(50 * (1 - 0.00165 - 0.065 / 365 * 67), abs=0.01)
+    assert by["TC"].delta_low == pytest.approx(50 * (1 - 0.00165 - 0.065 / 365 * 68), abs=0.01)
     assert {"Moisture", "Cu grade", "Freight rate"} <= set(by)
 
 

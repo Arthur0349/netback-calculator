@@ -9,7 +9,7 @@ illustrative spot-linked terms: TC -100 $/dmt, RC Cu -1.0 c/lb.
 Iron ore Morebaya -> Rotterdam, CFR 108 - 6 = 102, 8.5 % moisture:
     freight 9.5 / 0.915 = 10.3825 | financing 102 x 6.5 % / 365 x 40 = 0.7266
     netback = 102 - 10.3825 - 0.7266 - 2.6 - 0.51 + 0.65 = 88.4309
-    vs Qingdao 79.6889 (test_data_providers.py) -> Rotterdam best by 8.742
+    vs Qingdao 79.5735 (test_data_providers.py) -> Rotterdam best by 8.8574
 """
 
 import pytest
@@ -57,9 +57,9 @@ def test_rank_outlets_iron_ore(provider):
     assert (best.outlet, best.rank) == ("morebaya_rotterdam", 1)
     assert best.netback == pytest.approx(88.4309, abs=0.001)
     assert best.spread_vs_best == 0.0
-    assert best.cushion == pytest.approx(8.742, abs=0.001)
-    assert second.spread_vs_best == pytest.approx(-8.742, abs=0.001)
-    assert second.cargo_spread_vs_best == pytest.approx(-8.742 * 180000, rel=1e-4)
+    assert best.cushion == pytest.approx(8.8574, abs=0.001)
+    assert second.spread_vs_best == pytest.approx(-8.8574, abs=0.001)
+    assert second.cargo_spread_vs_best == pytest.approx(-8.8574 * 180000, rel=1e-4)
     assert best.freight == pytest.approx(10.3825, abs=0.001)
 
 

@@ -1,0 +1,445 @@
+{
+  "_notes": "Sea lanes for the route map only: named waypoints ([lat, lon]) and, per route, the ordered waypoints between the load and the discharge port. Drawn for legibility at world scale (ships stay at sea, capes and straits are in the right place); not a navigational track and not the source of the route distances, which come from sea-distance tables in routes.json.",
+  "waypoints": {
+    "guinea_offing": [
+      9.0,
+      -14.6
+    ],
+    "kamsar_offing": [
+      10.3,
+      -16.0
+    ],
+    "liberia_offing": [
+      4.0,
+      -12.0
+    ],
+    "bijagos_w": [
+      11.0,
+      -17.6
+    ],
+    "dakar_w": [
+      14.7,
+      -18.3
+    ],
+    "cap_blanc_w": [
+      21.0,
+      -18.0
+    ],
+    "canaries_channel": [
+      28.2,
+      -13.3
+    ],
+    "morocco_w": [
+      33.5,
+      -10.5
+    ],
+    "gulf_of_cadiz": [
+      36.5,
+      -8.0
+    ],
+    "finisterre": [
+      43.3,
+      -10.3
+    ],
+    "ushant": [
+      48.8,
+      -6.0
+    ],
+    "channel": [
+      50.0,
+      -2.0
+    ],
+    "dover": [
+      51.05,
+      1.5
+    ],
+    "lobito_offing": [
+      -12.4,
+      12.4
+    ],
+    "gabon_w": [
+      -3.0,
+      6.0
+    ],
+    "cape_palmas_s": [
+      3.3,
+      -8.5
+    ],
+    "sierra_leone_w": [
+      6.5,
+      -13.5
+    ],
+    "namibia_w": [
+      -25.0,
+      12.5
+    ],
+    "cape_of_good_hope": [
+      -35.5,
+      18.0
+    ],
+    "cape_agulhas": [
+      -36.0,
+      21.0
+    ],
+    "algoa_s": [
+      -34.6,
+      27.5
+    ],
+    "maputo_e": [
+      -27.0,
+      35.5
+    ],
+    "mozambique_channel": [
+      -17.0,
+      41.5
+    ],
+    "comoros_w": [
+      -11.0,
+      41.8
+    ],
+    "zanzibar_e": [
+      -5.0,
+      43.5
+    ],
+    "somalia_e": [
+      2.0,
+      49.5
+    ],
+    "socotra_e": [
+      11.0,
+      56.0
+    ],
+    "sunda_approach": [
+      -7.0,
+      104.5
+    ],
+    "sunda_strait": [
+      -5.95,
+      105.85
+    ],
+    "java_sea": [
+      -4.8,
+      106.8
+    ],
+    "gelasa_strait": [
+      -2.9,
+      107.25
+    ],
+    "karimata_n": [
+      0.5,
+      107.0
+    ],
+    "natuna_w": [
+      3.5,
+      107.2
+    ],
+    "south_china_sea": [
+      12.0,
+      112.5
+    ],
+    "taiwan_strait": [
+      24.3,
+      119.3
+    ],
+    "east_china_sea": [
+      30.5,
+      123.3
+    ],
+    "ningbo_offing": [
+      29.5,
+      122.6
+    ],
+    "qingdao_offing": [
+      35.5,
+      121.2
+    ],
+    "shandong_tip": [
+      37.7,
+      122.9
+    ],
+    "gulf_mid": [
+      26.4,
+      53.0
+    ],
+    "hormuz_w": [
+      26.2,
+      55.6
+    ],
+    "hormuz": [
+      26.65,
+      56.4
+    ],
+    "gulf_of_oman": [
+      25.0,
+      57.5
+    ],
+    "ras_al_hadd": [
+      22.6,
+      60.3
+    ],
+    "arabian_sea_n": [
+      23.0,
+      62.0
+    ],
+    "masirah_e": [
+      19.0,
+      59.5
+    ],
+    "salalah_s": [
+      14.5,
+      53.0
+    ],
+    "gulf_of_aden": [
+      12.2,
+      46.0
+    ],
+    "bab_el_mandeb": [
+      12.55,
+      43.35
+    ],
+    "red_sea_s": [
+      15.5,
+      41.5
+    ],
+    "red_sea_mid": [
+      20.5,
+      38.3
+    ],
+    "red_sea_n": [
+      26.5,
+      34.8
+    ],
+    "gulf_of_suez": [
+      28.5,
+      33.1
+    ],
+    "suez": [
+      29.95,
+      32.57
+    ],
+    "port_said": [
+      31.5,
+      32.35
+    ],
+    "crete_s": [
+      34.2,
+      24.5
+    ],
+    "malta_s": [
+      35.4,
+      15.0
+    ],
+    "cap_bon": [
+      37.5,
+      11.0
+    ],
+    "algeria_n": [
+      37.6,
+      4.0
+    ],
+    "alboran": [
+      36.3,
+      -2.5
+    ],
+    "gibraltar": [
+      35.95,
+      -5.6
+    ],
+    "st_vincent": [
+      36.7,
+      -9.6
+    ],
+    "cape_comorin_s": [
+      7.3,
+      76.5
+    ],
+    "dondra_head": [
+      5.6,
+      80.6
+    ],
+    "malacca_n": [
+      6.3,
+      95.0
+    ],
+    "malacca_mid": [
+      3.0,
+      100.6
+    ],
+    "singapore": [
+      1.15,
+      103.8
+    ],
+    "singapore_e": [
+      1.6,
+      104.8
+    ],
+    "vietnam_e": [
+      10.0,
+      110.3
+    ],
+    "paracels_w": [
+      16.0,
+      110.3
+    ],
+    "hainan_w": [
+      19.5,
+      107.9
+    ],
+    "dar_offing": [
+      -6.5,
+      40.5
+    ]
+  },
+  "lanes": {
+    "morebaya_qingdao": [
+      "guinea_offing",
+      "liberia_offing",
+      "cape_of_good_hope",
+      "cape_agulhas",
+      "sunda_approach",
+      "sunda_strait",
+      "java_sea",
+      "gelasa_strait",
+      "karimata_n",
+      "natuna_w",
+      "south_china_sea",
+      "taiwan_strait",
+      "east_china_sea",
+      "qingdao_offing"
+    ],
+    "kamsar_yantai": [
+      "kamsar_offing",
+      "liberia_offing",
+      "cape_of_good_hope",
+      "cape_agulhas",
+      "sunda_approach",
+      "sunda_strait",
+      "java_sea",
+      "gelasa_strait",
+      "karimata_n",
+      "natuna_w",
+      "south_china_sea",
+      "taiwan_strait",
+      "east_china_sea",
+      "shandong_tip"
+    ],
+    "lobito_qingdao": [
+      "lobito_offing",
+      "namibia_w",
+      "cape_of_good_hope",
+      "cape_agulhas",
+      "sunda_approach",
+      "sunda_strait",
+      "java_sea",
+      "gelasa_strait",
+      "karimata_n",
+      "natuna_w",
+      "south_china_sea",
+      "taiwan_strait",
+      "east_china_sea",
+      "qingdao_offing"
+    ],
+    "morebaya_rotterdam": [
+      "guinea_offing",
+      "bijagos_w",
+      "dakar_w",
+      "cap_blanc_w",
+      "canaries_channel",
+      "morocco_w",
+      "finisterre",
+      "ushant",
+      "channel",
+      "dover"
+    ],
+    "lobito_huelva": [
+      "lobito_offing",
+      "gabon_w",
+      "cape_palmas_s",
+      "sierra_leone_w",
+      "bijagos_w",
+      "dakar_w",
+      "cap_blanc_w",
+      "canaries_channel",
+      "morocco_w",
+      "gulf_of_cadiz"
+    ],
+    "kamsar_khalifa": [
+      "kamsar_offing",
+      "liberia_offing",
+      "cape_of_good_hope",
+      "cape_agulhas",
+      "algoa_s",
+      "maputo_e",
+      "mozambique_channel",
+      "comoros_w",
+      "zanzibar_e",
+      "somalia_e",
+      "socotra_e",
+      "ras_al_hadd",
+      "gulf_of_oman",
+      "hormuz",
+      "hormuz_w"
+    ],
+    "dar_es_salaam_fangchenggang": [
+      "dar_offing",
+      "malacca_n",
+      "malacca_mid",
+      "singapore",
+      "singapore_e",
+      "vietnam_e",
+      "paracels_w",
+      "hainan_w"
+    ],
+    "ras_tanura_ningbo": [
+      "gulf_mid",
+      "hormuz_w",
+      "hormuz",
+      "gulf_of_oman",
+      "ras_al_hadd",
+      "cape_comorin_s",
+      "dondra_head",
+      "malacca_n",
+      "malacca_mid",
+      "singapore",
+      "singapore_e",
+      "south_china_sea",
+      "taiwan_strait",
+      "ningbo_offing"
+    ],
+    "ras_tanura_sikka": [
+      "gulf_mid",
+      "hormuz_w",
+      "hormuz",
+      "gulf_of_oman",
+      "arabian_sea_n"
+    ],
+    "ras_tanura_rotterdam": [
+      "gulf_mid",
+      "hormuz_w",
+      "hormuz",
+      "gulf_of_oman",
+      "ras_al_hadd",
+      "masirah_e",
+      "salalah_s",
+      "gulf_of_aden",
+      "bab_el_mandeb",
+      "red_sea_s",
+      "red_sea_mid",
+      "red_sea_n",
+      "gulf_of_suez",
+      "suez",
+      "port_said",
+      "crete_s",
+      "malta_s",
+      "cap_bon",
+      "algeria_n",
+      "alboran",
+      "gibraltar",
+      "st_vincent",
+      "finisterre",
+      "ushant",
+      "channel",
+      "dover"
+    ]
+  }
+}
