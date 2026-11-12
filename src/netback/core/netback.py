@@ -53,9 +53,21 @@ def freight_rate_per_priced_unit(inputs: CostInputs,
 
 
 def compute_netback(inputs: CostInputs, route: Route, profile: CommodityProfile,
-                    mode: Literal["netback", "landed_cost"] = "netback") -> NetbackResult:
+                    mode: Literal["netback", "landed_cost"] = "netback",
+                    price_build_up: list[tuple[str, float]] | None = None
+                    ) -> NetbackResult:
+    """``price_build_up`` (optional) documents how ``inputs.price_basis`` was
+    built, e.g. a concentrate valuation; it must sum to the price basis."""
     if mode not in _RESULT_LABEL:
         raise ValueError(f"mode must be 'netback' or 'landed_cost', got {mode!r}")
+    if price_build_up:
+        if mode != "netback":
+            raise ValueError("A price build-up is a delivered valuation: "
+                             "only valid in netback mode")
+        total = sum(v for _, v in price_build_up)
+        if abs(total - inputs.price_basis) > 1e-6 * max(1.0, abs(total)):
+            raise ValueError(f"price_build_up sums to {total:.4f}, "
+                             f"price_basis is {inputs.price_basis:.4f}")
 
     q = inputs.quantity
     base = inputs.price_basis
@@ -93,7 +105,7 @@ def compute_netback(inputs: CostInputs, route: Route, profile: CommodityProfile,
         "Financing": True,
         "Port fees": mode == "netback" or legs["discharge_port"],
         "Commission": True,
-        "Quality adjustment": True,
+        "Quality adjustment": profile.quality_adjustment_fn != "none",
     }
     values = {
         "Freight": sign * freight,
@@ -119,4 +131,22 @@ def compute_netback(inputs: CostInputs, route: Route, profile: CommodityProfile,
         commission_cost=commission,
         result_price=result,
         breakdown=breakdown,
+        price_build_up=list(price_build_up or []),
     )
+
+
+def compute_concentrate_netback(inputs: CostInputs, route: Route,
+                                profile: CommodityProfile,
+                                metal_prices: dict[str, float]) -> NetbackResult:
+    """Value the concentrate from ``inputs.actual_quality`` (the assays) under
+    the profile's terms, then walk that delivered value back to FOB.
+    ``inputs.price_basis`` is replaced by the computed net invoice value."""
+    from netback.core.concentrate import value_concentrate
+
+    if profile.concentrate_terms is None:
+        raise ValueError(f"{profile.name} has no concentrate terms")
+    valuation = value_concentrate(inputs.actual_quality,
+                                  profile.concentrate_terms, metal_prices)
+    priced = inputs.model_copy(update={"price_basis": valuation.net_value})
+    return compute_netback(priced, route, profile, mode="netback",
+                           price_build_up=valuation.build_up)

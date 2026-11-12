@@ -10,6 +10,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any
 
+from netback.core.concentrate import value_concentrate
 from netback.data.providers.base import PriceDataProvider
 from netback.models.schemas import CommodityProfile, CostInputs, Route
 
@@ -57,8 +58,20 @@ class StaticDataProvider(PriceDataProvider):
     def get_commodity_profile(self, commodity: str) -> CommodityProfile:
         return CommodityProfile(**self._spec(commodity)["profile"])
 
+    def get_metal_prices(self, commodity: str) -> dict[str, float]:
+        return {k: float(v) for k, v in
+                self._spec(commodity).get("metal_prices", {}).items()}
+
+    def _concentrate_value(self, commodity: str, assays: dict[str, float]) -> float:
+        profile = self.get_commodity_profile(commodity)
+        return value_concentrate(assays, profile.concentrate_terms,
+                                 self.get_metal_prices(commodity)).net_value
+
     def get_benchmark_price(self, commodity: str) -> float:
         spec = self._spec(commodity)
+        profile = self.get_commodity_profile(commodity)
+        if profile.concentrate_terms is not None and "metal_prices" in spec:
+            return self._concentrate_value(commodity, profile.benchmark_spec)
         if "benchmark_price" not in spec:
             raise KeyError(
                 f"No benchmark price in the reference data for {commodity!r} "
@@ -115,10 +128,15 @@ class StaticDataProvider(PriceDataProvider):
             )
         defaults = spec["defaults"]
         route = self.get_route(route_id)
+        if price_basis is None:
+            if self.get_commodity_profile(commodity).concentrate_terms is not None:
+                price_basis = self._concentrate_value(commodity,
+                                                      defaults["actual_quality"])
+            else:
+                price_basis = self.get_benchmark_price(commodity)
         return CostInputs(
             quantity=quantity if quantity is not None else defaults["quantity"],
-            price_basis=(price_basis if price_basis is not None
-                         else self.get_benchmark_price(commodity)),
+            price_basis=price_basis,
             freight_rate_per_unit=self.get_freight_rate(route),
             insurance_rate_pct=defaults["insurance_rate_pct"],
             financing_rate_annual_pct=defaults["financing_rate_annual_pct"],

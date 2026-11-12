@@ -101,12 +101,37 @@ Examples shipped:
 - **Spodumene** (config skeleton): linear Li₂O adjustment, reusing an
   already-registered formula — a new commodity is configuration, not code.
 
+## Concentrates: payables, TC/RC, penalties
+
+Concentrates have no flat index price. The delivered value of one dry tonne
+is built from its assays under the smelter terms, then walked back to FOB
+like any other price:
+
+$$P_{CIF} = \sum_m \text{payable}_m \times \text{price}_m - TC - \sum_m RC_m \times \text{payable}_m - \sum_e \text{penalty}_e$$
+
+- **Payable content**: the *lower* of a payable percentage of the assay and
+  the assay minus a minimum deduction (copper: 96.5 %, min. 1 unit; gold:
+  90 % after 1 g/dmt; silver: 90 % after 30 g/dmt).
+- **Units**: base metals in % and USD/t, precious metals in g/dmt and USD/oz
+  troy (31.1035 g). Copper RC in USD per payable lb (2,204.62 lb/t),
+  precious RC in USD per payable oz.
+- **TC/RC can be negative.** The 2026 annual copper benchmark settled at
+  USD 0/dmt and 0 c/lb; spot traded around −USD 120/dmt by mid-2026, i.e.
+  smelters paying miners for feed.
+- **Penalties**: USD per step of a deleterious element above its free level
+  (arsenic: USD 3 per 0.1 % above 0.2 %), pro rata.
+
+The assays are fully priced in the valuation, so concentrates carry no
+separate quality adjustment.
+
 ## Assumptions & limits
 
 - Reference prices, freight rates and port fees are **static indicative
   figures** at realistic mid-2020s levels, chosen for internal consistency
   rather than day-accuracy. Live assessments are a planned extension behind
   the same `PriceDataProvider` interface.
+- Concentrates: the quotational period (QP), provisional/final invoicing
+  and price participation are not modelled; prices are the QP average.
 - Demurrage/despatch, weather routing, bunker adjustment factors and FX are
   out of scope of this version.
 - Insurance uses the market shortcut on the CIF value; the exact landed

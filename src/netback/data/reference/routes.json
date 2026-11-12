@@ -54,5 +54,38 @@
       "vessel_type": "Capesize"
     },
     "_sources": "Guinea -> Shandong via Cape of Good Hope"
+  },
+  "lobito_qingdao": {
+    "commodity": "copper_concentrate",
+    "route": {
+      "load_port": "Lobito",
+      "discharge_port": "Qingdao",
+      "distance_nm": 10800,
+      "transit_days": 37,
+      "vessel_type": "Supramax"
+    },
+    "_sources": "Angola (Lobito Atlantic Railway outlet) -> North China via Cape of Good Hope, Supramax ~13 kn"
+  },
+  "lobito_huelva": {
+    "commodity": "copper_concentrate",
+    "route": {
+      "load_port": "Lobito",
+      "discharge_port": "Huelva",
+      "distance_nm": 4300,
+      "transit_days": 15,
+      "vessel_type": "Supramax"
+    },
+    "_sources": "Angola -> SW Spain (Atlantic Copper smelter), direct Atlantic leg"
+  },
+  "dar_es_salaam_fangchenggang": {
+    "commodity": "copper_concentrate",
+    "route": {
+      "load_port": "Dar es Salaam",
+      "discharge_port": "Fangchenggang",
+      "distance_nm": 5900,
+      "transit_days": 21,
+      "vessel_type": "Supramax"
+    },
+    "_sources": "Tanzania -> Guangxi smelter cluster via Indian Ocean / Malacca"
   }
 }

@@ -34,7 +34,11 @@ name and parameters — injected into the engine at run time:
 
 - **Iron ore fines** (Guinea → China/Europe, Capesize, CFR), **bauxite**
   (Kamsar → Yantai, Capesize, CIF) and **crude oil** (Arabian Gulf →
-  Asia/Europe, VLCC/Suezmax) ship fully built: routes,
+  Asia/Europe, VLCC/Suezmax) ship fully built
+- **Copper concentrate** (Lobito → Qingdao/Huelva, Dar es Salaam →
+  Fangchenggang, Supramax) is valued from its assays: payable Cu/Au/Ag,
+  TC/RC (2026 benchmark USD 0 / 0 c, negative spot supported) and arsenic
+  penalties, then walked back to FOB. The waterfall starts at the payables: routes,
   indicative freight, port fees, benchmark prices, quality escalators.
 - **Spodumene concentrate** ships as a config-only skeleton: a valid profile
   reusing an already-registered adjustment formula, with no routes or defaults
@@ -88,13 +92,14 @@ pytest
 | Engine | Python 3.10+, pure functions, pydantic v2 models |
 | Data | JSON reference tables behind a `PriceDataProvider` ABC |
 | UI | Streamlit multipage app, Plotly (`go.Waterfall`) charts |
-| Quality | pytest (46 tests, hand-computed reference cases), GitHub Actions on every push |
+| Quality | pytest (54 tests, hand-computed reference cases), GitHub Actions on every push |
 
 ## Roadmap
 
 - [x] Core cost engine + tests (freight, insurance, financing, port fees, quality adjustment)
 - [x] Static data layer (iron ore, bauxite, crude oil; spodumene config skeleton)
 - [x] Incoterm-aware cost legs (CFR/CIF/DAP/DPU), wet-to-dry freight conversion
+- [x] Concentrate valuation: payables, TC/RC, penalties (copper)
 - [x] Streamlit app: calculator, scenario comparison, methodology
 - [x] GitHub Actions CI (pytest on push)
 - [ ] Deploy to Streamlit Community Cloud

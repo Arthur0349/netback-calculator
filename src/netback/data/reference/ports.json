@@ -41,5 +41,29 @@
     "load_fee_per_unit": 1.8,
     "discharge_fee_per_unit": 1.8,
     "_sources": "Main Shandong bauxite discharge port, dry bulk USD/dmt"
+  },
+  "Lobito": {
+    "country": "Angola",
+    "load_fee_per_unit": 6.0,
+    "discharge_fee_per_unit": 6.0,
+    "_sources": "Lobito mineral terminal, concentrate handling USD/dmt"
+  },
+  "Dar es Salaam": {
+    "country": "Tanzania",
+    "load_fee_per_unit": 8.0,
+    "discharge_fee_per_unit": 8.0,
+    "_sources": "Concentrate export incl. congestion-heavy handling, USD/dmt"
+  },
+  "Huelva": {
+    "country": "Spain",
+    "load_fee_per_unit": 3.5,
+    "discharge_fee_per_unit": 3.5,
+    "_sources": "Atlantic Copper smelter port, USD/dmt"
+  },
+  "Fangchenggang": {
+    "country": "China",
+    "load_fee_per_unit": 3.0,
+    "discharge_fee_per_unit": 3.0,
+    "_sources": "Guangxi concentrate discharge, USD/dmt"
   }
 }

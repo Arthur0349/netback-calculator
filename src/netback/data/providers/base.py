@@ -29,7 +29,13 @@ class PriceDataProvider(ABC):
 
     @abstractmethod
     def get_benchmark_price(self, commodity: str) -> float:
-        """Benchmark price in $/unit on the basis documented in the data."""
+        """Benchmark price in $/unit on the basis documented in the data.
+        For concentrates: the valuation of the benchmark assays."""
+
+    @abstractmethod
+    def get_metal_prices(self, commodity: str) -> dict[str, float]:
+        """Metal prices used to value a concentrate ($/t base metals, $/oz
+        precious). Empty for commodities priced off a flat index."""
 
     @abstractmethod
     def list_routes(self, commodity: str | None = None) -> list[str]:
@@ -53,4 +59,5 @@ class PriceDataProvider(ABC):
                                 quantity: float | None = None) -> CostInputs:
         """A fully populated ``CostInputs`` for one commodity on one route,
         using reference defaults for every field the caller does not override.
-        ``price_basis`` defaults to the commodity's benchmark price."""
+        ``price_basis`` defaults to the commodity's benchmark price (for
+        concentrates: the valuation of the default cargo assays)."""

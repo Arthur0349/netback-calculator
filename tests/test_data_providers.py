@@ -41,7 +41,8 @@ def provider():
 # --- reference data loads and validates against the schemas ------------------
 
 def test_all_commodities_present(provider):
-    assert provider.list_commodities() == ["bauxite", "crude_oil", "iron_ore",
+    assert provider.list_commodities() == ["bauxite", "copper_concentrate",
+                                           "crude_oil", "iron_ore",
                                            "lithium_spodumene"]
 
 
@@ -73,6 +74,8 @@ def test_every_route_validates_and_is_fully_covered(provider):
     assert provider.list_routes("crude_oil") == ["ras_tanura_ningbo",
                                                  "ras_tanura_rotterdam"]
     assert provider.list_routes("bauxite") == ["kamsar_yantai"]
+    assert provider.list_routes("copper_concentrate") == [
+        "dar_es_salaam_fangchenggang", "lobito_huelva", "lobito_qingdao"]
     for route_id in provider.list_routes():
         route = provider.get_route(route_id)
         assert isinstance(route, Route)
@@ -206,6 +209,7 @@ def test_live_provider_is_a_stub():
     for call in (lambda: live.list_commodities(),
                  lambda: live.get_commodity_profile("iron_ore"),
                  lambda: live.get_benchmark_price("iron_ore"),
+                 lambda: live.get_metal_prices("copper_concentrate"),
                  lambda: live.list_routes(),
                  lambda: live.get_route("morebaya_qingdao"),
                  lambda: live.get_freight_rate(route),

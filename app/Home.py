@@ -41,7 +41,8 @@ st.markdown(
     "The engine is **commodity-agnostic**: each commodity is a configuration "
     "profile (unit, benchmark spec, quality-adjustment formula) injected into "
     "the engine, not hard-coded logic. Iron ore, bauxite and crude oil "
-    "ship fully built; spodumene is a config-only skeleton proving that a new commodity "
+    "ship fully built; copper concentrate is valued from its assays "
+    "(payables, TC/RC, penalties); spodumene is a config-only skeleton proving that a new commodity "
     "is a data edit, not a code change."
 )
 

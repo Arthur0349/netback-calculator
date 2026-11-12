@@ -26,6 +26,9 @@ class LiveDataProvider(PriceDataProvider):
     def get_benchmark_price(self, commodity: str) -> float:
         raise NotImplementedError(_MESSAGE)
 
+    def get_metal_prices(self, commodity: str) -> dict[str, float]:
+        raise NotImplementedError(_MESSAGE)
+
     def list_routes(self, commodity: str | None = None) -> list[str]:
         raise NotImplementedError(_MESSAGE)
 

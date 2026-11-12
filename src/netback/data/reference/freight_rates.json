@@ -19,5 +19,17 @@
   "kamsar_yantai": {
     "freight_rate_per_unit": 23.0,
     "basis": "USD/wmt, Capesize Guinea bauxite -> Shandong (transhipped Capesize, C3-plus level)"
+  },
+  "lobito_qingdao": {
+    "freight_rate_per_unit": 45.0,
+    "basis": "USD/wmt, Supramax concentrate West Africa -> China"
+  },
+  "lobito_huelva": {
+    "freight_rate_per_unit": 30.0,
+    "basis": "USD/wmt, Supramax concentrate West Africa -> Spain"
+  },
+  "dar_es_salaam_fangchenggang": {
+    "freight_rate_per_unit": 38.0,
+    "basis": "USD/wmt, Supramax concentrate East Africa -> South China"
   }
 }

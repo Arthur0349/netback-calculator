@@ -34,6 +34,42 @@ DELIVERY_TERM_LEGS: dict[str, dict[str, bool]] = {
 }
 
 
+class PayableTerm(BaseModel):
+    """One payable metal in a concentrate contract (see core/concentrate.py
+    for the conventions)."""
+    element: str                            # assay key, e.g. "Cu", "Au"
+    unit: Literal["pct", "g_per_t"]
+    payable_pct: float = Field(gt=0, le=100)
+    min_deduction: float = Field(default=0.0, ge=0)   # same unit as the assay
+    price_key: str                          # key into the metal prices
+    refining_charge: float = 0.0            # $/lb (pct) or $/oz (g_per_t) payable
+
+
+class PenaltyTerm(BaseModel):
+    element: str
+    threshold: float = Field(ge=0)          # free level, assay unit
+    per_step: float = Field(gt=0)           # e.g. 0.1 (% As)
+    usd_per_step: float = Field(ge=0)       # $/dmt per step above threshold
+    pro_rata: bool = True
+
+
+class ConcentrateTerms(BaseModel):
+    payables: list[PayableTerm]
+    treatment_charge: float = 0.0           # $/dmt, may be negative
+    penalties: list[PenaltyTerm] = Field(default_factory=list)
+
+
+class ConcentrateValuation(BaseModel):
+    """Net invoice value of a concentrate, $/dmt."""
+    payable_value: float
+    treatment_charge: float
+    refining_charge: float
+    penalties: float
+    net_value: float
+    build_up: list[tuple[str, float]]       # payables (+), TC, RC, penalties (-)
+    details: list[tuple[str, str, float]]   # line, payable quantity, $/dmt
+
+
 class CommodityProfile(BaseModel):
     """Configuration profile for a commodity. The engine itself is
     commodity-agnostic: everything specific lives here."""
@@ -48,6 +84,9 @@ class CommodityProfile(BaseModel):
     # When set, freight is quoted per WET tonne (dry bulk convention) while
     # the commodity is priced per dry tonne: the engine converts the rate
     # with the moisture % found under this key in ``actual_quality``.
+    concentrate_terms: ConcentrateTerms | None = None
+    # When set, the commodity has no flat index price: its delivered value is
+    # built from the assays (payables - TC - RC - penalties).
 
 
 class Route(BaseModel):
@@ -87,3 +126,6 @@ class NetbackResult(BaseModel):
     commission_cost: float
     result_price: float                     # FOB netback or landed cost, $/unit
     breakdown: list[tuple[str, float]]      # waterfall chart: base, signed deltas, result
+    price_build_up: list[tuple[str, float]] = Field(default_factory=list)
+    # concentrates only: how ``base_price`` was built (payables, TC, RC,
+    # penalties), drawn ahead of the breakdown on the waterfall

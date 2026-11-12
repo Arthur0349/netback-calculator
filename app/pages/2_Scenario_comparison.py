@@ -44,9 +44,19 @@ for i, col in enumerate(columns):
 
         seed = seed_inputs(provider, commodity, route_id)
         k = f"cmp_{i}_{commodity}_{route_id}"
-        price = st.number_input(f"Base price (USD/{profile.unit})",
-                                min_value=0.01, value=float(seed["price_basis"]),
-                                key=f"{k}_price")
+        is_concentrate = profile.concentrate_terms is not None
+        if is_concentrate and mode != "netback":
+            st.warning("Concentrates are valued from their assays: "
+                       "netback mode only.")
+            continue
+        if is_concentrate:
+            price = float(seed["price_basis"])
+            st.caption(f"Net invoice value of the reference cargo: "
+                       f"${price:,.2f}/{profile.unit}")
+        else:
+            price = st.number_input(f"Base price (USD/{profile.unit})",
+                                    min_value=0.01, value=float(seed["price_basis"]),
+                                    key=f"{k}_price")
         quantity = st.number_input(f"Quantity ({profile.unit})", min_value=1.0,
                                    value=float(seed["quantity"]), step=1000.0,
                                    key=f"{k}_qty")
@@ -55,7 +65,8 @@ for i, col in enumerate(columns):
                                                   price_basis=price,
                                                   quantity=quantity)
         route = provider.get_route(route_id)
-        result = compute(inputs, route, profile, mode)
+        result = compute(inputs, route, profile, mode,
+                         provider.get_metal_prices(commodity))
 
         st.caption(f"Priced {inputs.delivery_term} {route.discharge_port} "
                    "(reference term for this commodity)")

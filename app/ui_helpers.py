@@ -12,7 +12,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import theme
-from netback.core.netback import compute_netback
+from netback.core.concentrate import value_concentrate
+from netback.core.netback import compute_concentrate_netback, compute_netback
 from netback.data.providers.static import StaticDataProvider
 from netback.models.schemas import (DELIVERY_TERM_LEGS, CommodityProfile,
                                     CostInputs, NetbackResult, Route)
@@ -117,6 +118,8 @@ def route_inputs(provider: StaticDataProvider, commodity: str, container,
 
 def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
                      key_prefix: str = "") -> CostInputs:
+    """Concentrates get no price widget: their delivered value is computed
+    from the assays (see ``concentrate_inputs``)."""
     """Render every ``CostInputs`` field as a widget seeded from ``seed``.
 
     Quality fields are generated from the profile's benchmark spec keys, so
@@ -132,9 +135,12 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
     quantity = container.number_input(
         f"Quantity ({profile.unit})", min_value=1.0,
         value=float(seed["quantity"]), step=1000.0, key=f"{k}quantity")
-    price_basis = container.number_input(
-        f"Base price (USD/{profile.unit})", min_value=0.01,
-        value=float(seed["price_basis"]), key=f"{k}price")
+    if profile.concentrate_terms is None:
+        price_basis = container.number_input(
+            f"Base price (USD/{profile.unit})", min_value=0.01,
+            value=float(seed["price_basis"]), key=f"{k}price")
+    else:
+        price_basis = float(seed["price_basis"])   # replaced by the valuation
 
     freight_unit = ("wmt, converted to dry with cargo moisture"
                     if profile.freight_moisture_key else profile.unit)
@@ -162,7 +168,9 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
         "Commission (%)", min_value=0.0, value=float(seed["commission_pct"]),
         step=0.05, format="%.2f", key=f"{k}commission")
 
-    container.markdown("**Cargo quality** (benchmark in parentheses)")
+    container.markdown("**Cargo assays** (benchmark in parentheses)"
+                       if profile.concentrate_terms else
+                       "**Cargo quality** (benchmark in parentheses)")
     seed_quality = seed.get("actual_quality", {})
     actual_quality = {
         spec_key: container.number_input(
@@ -188,6 +196,52 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
     )
 
 
+_PRICE_UNITS = {"pct": "USD/t", "g_per_t": "USD/oz"}
+_RC_UNITS = {"pct": "USD/lb payable", "g_per_t": "USD/oz payable"}
+
+
+def concentrate_inputs(profile: CommodityProfile, metal_prices: dict[str, float],
+                       container, key_prefix: str = ""
+                       ) -> tuple[CommodityProfile, dict[str, float]]:
+    """Metal prices and smelter terms (TC, RC per payable metal) as widgets.
+    Returns the profile with the edited terms and the edited prices."""
+    terms = profile.concentrate_terms
+    k = key_prefix
+    container.markdown("**Metal prices**")
+    prices = {}
+    for p in terms.payables:
+        prices[p.price_key] = container.number_input(
+            f"{p.price_key} ({_PRICE_UNITS[p.unit]})", min_value=0.0,
+            value=float(metal_prices.get(p.price_key, 0.0)),
+            key=f"{k}px_{p.price_key}")
+    container.markdown("**Smelter terms**")
+    tc = container.number_input(
+        "TC (USD/dmt, negative = smelter pays)", value=float(terms.treatment_charge),
+        step=5.0, key=f"{k}tc",
+        help="2026 annual benchmark: USD 0/dmt. Spot traded around "
+             "-USD 120/dmt by mid-2026.")
+    payables = []
+    for p in terms.payables:
+        rc = container.number_input(
+            f"RC {p.element} ({_RC_UNITS[p.unit]})", value=float(p.refining_charge),
+            step=0.01 if p.unit == "pct" else 0.1, format="%.3f",
+            key=f"{k}rc_{p.element}")
+        payables.append(p.model_copy(update={"refining_charge": rc}))
+    edited = terms.model_copy(update={"treatment_charge": tc, "payables": payables})
+    return profile.model_copy(update={"concentrate_terms": edited}), prices
+
+
+def concentrate_details_table(profile: CommodityProfile, inputs: CostInputs,
+                              metal_prices: dict[str, float]) -> None:
+    v = value_concentrate(inputs.actual_quality, profile.concentrate_terms,
+                          metal_prices)
+    theme.data_table(
+        ["Line", "Payable / assay", f"USD/{profile.unit}"],
+        [[line, qty, f"{val:,.2f}"] for line, qty, val in v.details]
+        + [["Net invoice value", "", f"{v.net_value:,.2f}"]],
+    )
+
+
 def result_metric_cards(result: NetbackResult, unit: str) -> None:
     """Headline metric cards: base price, total costs, quality adjustment,
     final result."""
@@ -199,8 +253,8 @@ def result_metric_cards(result: NetbackResult, unit: str) -> None:
     quality_premium = result.quality_adjustment >= 0
 
     theme.metric_cards([
-        {"label": "Base price", "value": f"${result.base_price:,.2f}",
-         "unit": unit},
+        {"label": "Net invoice value" if result.price_build_up else "Base price",
+         "value": f"${result.base_price:,.2f}", "unit": unit},
         {"label": "Total voyage costs", "value": f"${total_costs:,.2f}",
          "unit": unit,
          "delta": f"{sign}{total_costs / result.base_price:.1%} of base"},
@@ -239,6 +293,21 @@ def waterfall_figure(result: NetbackResult, unit: str) -> go.Figure:
     labels = [label for label, _ in result.breakdown]
     values = [value for _, value in result.breakdown]
     measures = ["absolute"] + ["relative"] * (len(values) - 2) + ["total"]
+    if result.price_build_up:
+        # Concentrates: payables -> TC/RC/penalties -> net invoice value
+        # (subtotal) -> voyage legs -> FOB netback.
+        build = [(label, value) for label, value in result.price_build_up
+                 if value or label.startswith("Payable")]
+        labels = ([label for label, _ in build] + ["Net invoice value"]
+                  + labels[1:])
+        values = [value for _, value in build] + values
+        measures = (["absolute"] + ["relative"] * (len(build) - 1) + ["total"]
+                    + measures[1:])
+
+    # Drop zero-value legs (e.g. no commission): a "-0.00" bar is noise.
+    kept = [(l, v, m) for l, v, m in zip(labels, values, measures)
+            if m != "relative" or v != 0]
+    labels, values, measures = (list(t) for t in zip(*kept))
 
     # Crop the y-axis to the running total's envelope: with an axis pinned
     # at zero the individual cost legs are a few pixels tall and unreadable.
@@ -308,7 +377,11 @@ def cost_share_figure(result: NetbackResult, unit: str) -> go.Figure:
 
 
 def compute(inputs: CostInputs, route: Route, profile: CommodityProfile,
-            mode: str) -> NetbackResult:
+            mode: str, metal_prices: dict[str, float] | None = None) -> NetbackResult:
+    """Concentrates are valued from their assays and run in netback mode."""
+    if profile.concentrate_terms is not None:
+        return compute_concentrate_netback(inputs, route, profile,
+                                           metal_prices or {})
     return compute_netback(inputs, route, profile, mode=mode)
 
 

@@ -39,6 +39,13 @@ def quality_adjustment(fn_name: str, actual: dict, benchmark: dict,
     return get_adjustment_fn(fn_name)(actual, benchmark, params)
 
 
+@register("none")
+def no_adjustment(actual: dict, benchmark: dict, params: dict) -> float:
+    """No separate quality adjustment: used by concentrates, whose assays are
+    already priced in the valuation (payables and penalties)."""
+    return 0.0
+
+
 @register("bauxite_linear")
 def bauxite_linear(actual: dict, benchmark: dict, params: dict) -> float:
     """Linear adjustment per unit of deviation (standard Platts/CRU pattern):

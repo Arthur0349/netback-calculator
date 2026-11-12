@@ -110,5 +110,80 @@
       }
     },
     "_sources": "Config skeleton only: a valid CommodityProfile reusing the already-registered spodumene_linear formula, with no benchmark price, routes, freight or defaults yet. Proves a new commodity is pure configuration — no code change."
+  },
+  "copper_concentrate": {
+    "profile": {
+      "name": "Copper concentrate",
+      "unit": "dmt",
+      "benchmark_spec": {
+        "Cu": 28.0,
+        "Au": 1.5,
+        "Ag": 60.0,
+        "As": 0.15,
+        "moisture": 9.0
+      },
+      "quality_adjustment_fn": "none",
+      "freight_moisture_key": "moisture",
+      "concentrate_terms": {
+        "payables": [
+          {
+            "element": "Cu",
+            "unit": "pct",
+            "payable_pct": 96.5,
+            "min_deduction": 1.0,
+            "price_key": "Cu",
+            "refining_charge": 0.0
+          },
+          {
+            "element": "Au",
+            "unit": "g_per_t",
+            "payable_pct": 90.0,
+            "min_deduction": 1.0,
+            "price_key": "Au",
+            "refining_charge": 5.0
+          },
+          {
+            "element": "Ag",
+            "unit": "g_per_t",
+            "payable_pct": 90.0,
+            "min_deduction": 30.0,
+            "price_key": "Ag",
+            "refining_charge": 0.4
+          }
+        ],
+        "treatment_charge": 0.0,
+        "penalties": [
+          {
+            "element": "As",
+            "threshold": 0.2,
+            "per_step": 0.1,
+            "usd_per_step": 3.0,
+            "pro_rata": true
+          }
+        ]
+      }
+    },
+    "metal_prices": {
+      "Cu": 13800.0,
+      "Au": 4100.0,
+      "Ag": 52.0
+    },
+    "_metal_prices_basis": "Cu USD/t (LME, ~6.27 USD/lb), Au and Ag USD/oz, indicative November 2026 levels",
+    "defaults": {
+      "quantity": 10000,
+      "insurance_rate_pct": 0.15,
+      "financing_rate_annual_pct": 6.5,
+      "payment_terms_days": 30,
+      "commission_pct": 0.0,
+      "delivery_term": "CIF",
+      "actual_quality": {
+        "Cu": 26.5,
+        "Au": 2.2,
+        "Ag": 45.0,
+        "As": 0.35,
+        "moisture": 9.5
+      }
+    },
+    "_sources": "Terms on the 2026 annual benchmark: TC USD 0/dmt, RC 0 c/lb (Antofagasta / Chinese smelters, Dec 2025); spot TC/RC traded around -USD 120/dmt by mid-2026, enter a negative TC to test spot. Cu payable 96.5 % min. 1 unit deduction, Au 90 % after 1 g, Ag 90 % after 30 g, As penalty USD 3 per 0.1 % above 0.2 %: standard clean-concentrate wording. Default cargo: Central African Copperbelt concentrate railed to Lobito or trucked to Dar es Salaam."
   }
 }
