@@ -5,17 +5,23 @@ provider is a stub and must say so clearly.
 The two end-to-end cases are checked against hand-computed figures using the
 values in ``data/reference/``:
 
-Iron ore, Morebaya -> Qingdao (Capesize), CIF 108 USD/dmt:
-    freight 22.50 | insurance (108+22.5)*1.10*0.35% = 0.502425
-    financing 108*6.5%/365*(34+30) = 1.230904 | ports 2.6+1.9 = 4.50
+Iron ore, Morebaya -> Qingdao (Capesize), CFR 108 USD/dmt, 8.5 % moisture:
+    freight 22.5 $/wmt / (1 - 0.085) = 24.590164 $/dmt | insurance 0 (CFR)
+    financing 108*6.5%/365*(34+30) = 1.230904 | ports: load 2.6 only
     commission 108*0.5% = 0.54 | quality 0.5*1.9 - 0 - 0.5*0.6 = 0.65
-    netback = 108 - 22.5 - 0.502425 - 1.230904 - 4.5 - 0.54 + 0.65 = 79.376671
+    netback = 108 - 24.590164 - 1.230904 - 2.6 - 0.54 + 0.65 = 79.688932
 
-Crude oil, Ras Tanura -> Ningbo (VLCC), delivered 78 USD/bbl:
-    freight 1.90 | insurance (78+1.9)*1.10*0.25% = 0.219725
-    financing 78*6.0%/365*(22+30) = 0.666740 | ports 0.18+0.14 = 0.32
+Crude oil, Ras Tanura -> Ningbo (VLCC), CIF 78 USD/bbl:
+    freight 1.90 | insurance 78*1.10*0.25% = 0.2145
+    financing 78*6.0%/365*(22+30) = 0.666740 | ports: load 0.18 only
     commission 78*0.25% = 0.195 | quality 2.2*0.3 - (-0.6)*0.9 = 1.20
-    netback = 78 - 1.9 - 0.219725 - 0.666740 - 0.32 - 0.195 + 1.20 = 75.898535
+    netback = 78 - 1.9 - 0.2145 - 0.666740 - 0.18 - 0.195 + 1.20 = 76.043760
+
+Bauxite, Kamsar -> Yantai (Capesize), CIF 72 USD/dmt, 11 % moisture:
+    freight 23 $/wmt / 0.89 = 25.842697 | insurance 72*1.10*0.35% = 0.2772
+    financing 72*6.5%/365*(35+30) = 0.833425 | ports: load 2.0 only
+    commission 72*0.5% = 0.36 | quality 1.0*1.5 - 0 = 1.50
+    netback = 72 - 25.842697 - 0.2772 - 0.833425 - 2.0 - 0.36 + 1.50 = 44.186678
 """
 
 import pytest
@@ -35,7 +41,7 @@ def provider():
 # --- reference data loads and validates against the schemas ------------------
 
 def test_all_commodities_present(provider):
-    assert provider.list_commodities() == ["crude_oil", "iron_ore",
+    assert provider.list_commodities() == ["bauxite", "crude_oil", "iron_ore",
                                            "lithium_spodumene"]
 
 
@@ -66,6 +72,7 @@ def test_every_route_validates_and_is_fully_covered(provider):
                                                 "morebaya_rotterdam"]
     assert provider.list_routes("crude_oil") == ["ras_tanura_ningbo",
                                                  "ras_tanura_rotterdam"]
+    assert provider.list_routes("bauxite") == ["kamsar_yantai"]
     for route_id in provider.list_routes():
         route = provider.get_route(route_id)
         assert isinstance(route, Route)
@@ -78,6 +85,7 @@ def test_every_route_validates_and_is_fully_covered(provider):
 def test_benchmark_prices(provider):
     assert provider.get_benchmark_price("iron_ore") == 108.0
     assert provider.get_benchmark_price("crude_oil") == 78.0
+    assert provider.get_benchmark_price("bauxite") == 72.0
 
 
 def test_unknown_keys_raise_helpful_errors(provider):
@@ -102,6 +110,7 @@ def test_default_cost_inputs_fully_populated(provider):
     assert inputs.freight_rate_per_unit == 22.5
     assert inputs.load_port_fee_per_unit == 2.6
     assert inputs.discharge_port_fee_per_unit == 1.9
+    assert inputs.delivery_term == "CFR"           # IODEX is a CFR China index
     # overrides win
     custom = provider.get_default_cost_inputs("iron_ore", "morebaya_qingdao",
                                               price_basis=95.0, quantity=1000)
@@ -117,13 +126,13 @@ def test_iron_ore_end_to_end_netback(provider):
     profile = provider.get_commodity_profile("iron_ore")
     result = compute_netback(inputs, route, profile, mode="netback")
 
-    assert result.freight_cost == pytest.approx(22.5, abs=0.005)
-    assert result.insurance_cost == pytest.approx(0.502425, abs=0.005)
+    assert result.freight_cost == pytest.approx(24.590164, abs=0.005)
+    assert result.insurance_cost == 0.0
     assert result.financing_cost == pytest.approx(1.230904, abs=0.005)
-    assert result.port_fees_total == pytest.approx(4.5, abs=0.005)
+    assert result.port_fees_total == pytest.approx(2.6, abs=0.005)
     assert result.commission_cost == pytest.approx(0.54, abs=0.005)
     assert result.quality_adjustment == pytest.approx(0.65, abs=0.005)
-    assert result.result_price == pytest.approx(79.376671, abs=0.005)
+    assert result.result_price == pytest.approx(79.688932, abs=0.005)
 
 
 def test_crude_oil_end_to_end_netback(provider):
@@ -133,7 +142,20 @@ def test_crude_oil_end_to_end_netback(provider):
     result = compute_netback(inputs, route, profile, mode="netback")
 
     assert result.quality_adjustment == pytest.approx(1.20, abs=0.005)
-    assert result.result_price == pytest.approx(75.898535, abs=0.005)
+    assert result.insurance_cost == pytest.approx(0.2145, abs=0.005)
+    assert result.result_price == pytest.approx(76.043760, abs=0.005)
+
+
+def test_bauxite_end_to_end_netback(provider):
+    inputs = provider.get_default_cost_inputs("bauxite", "kamsar_yantai")
+    route = provider.get_route("kamsar_yantai")
+    profile = provider.get_commodity_profile("bauxite")
+    result = compute_netback(inputs, route, profile, mode="netback")
+
+    assert result.freight_cost == pytest.approx(25.842697, abs=0.005)
+    assert result.insurance_cost == pytest.approx(0.2772, abs=0.005)
+    assert result.quality_adjustment == pytest.approx(1.50, abs=0.005)
+    assert result.result_price == pytest.approx(44.186678, abs=0.005)
 
 
 def test_landed_cost_mode_also_flows(provider):

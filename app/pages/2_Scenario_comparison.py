@@ -57,6 +57,8 @@ for i, col in enumerate(columns):
         route = provider.get_route(route_id)
         result = compute(inputs, route, profile, mode)
 
+        st.caption(f"Priced {inputs.delivery_term} {route.discharge_port} "
+                   "(reference term for this commodity)")
         result_label = result.breakdown[-1][0]
         theme.metric_cards([
             {"label": result_label, "value": f"${result.result_price:,.2f}",

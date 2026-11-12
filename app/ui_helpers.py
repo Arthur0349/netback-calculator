@@ -14,7 +14,8 @@ import streamlit as st
 import theme
 from netback.core.netback import compute_netback
 from netback.data.providers.static import StaticDataProvider
-from netback.models.schemas import CommodityProfile, CostInputs, NetbackResult, Route
+from netback.models.schemas import (DELIVERY_TERM_LEGS, CommodityProfile,
+                                    CostInputs, NetbackResult, Route)
 
 # Generic seeds used when the reference data ships no defaults for a
 # commodity (config skeletons). Deliberately neutral, all overridable.
@@ -28,10 +29,19 @@ _GENERIC_DEFAULTS: dict[str, Any] = {
     "load_port_fee_per_unit": 2.0,
     "discharge_port_fee_per_unit": 2.0,
     "commission_pct": 0.0,
+    "delivery_term": "CIF",
+}
+
+DELIVERY_TERM_HELP = {
+    "CFR": "Cost and freight: buyer insures, buyer unloads.",
+    "CIF": "Cost, insurance and freight: seller insures, buyer unloads.",
+    "DAP": "Delivered at place: seller insures and carries transit risk, "
+           "buyer unloads.",
+    "DPU": "Delivered at place unloaded: seller also pays discharge handling.",
 }
 
 MODE_LABELS = {
-    "netback": "Netback (CIF sale price → FOB netback)",
+    "netback": "Netback (delivered sale price → FOB netback)",
     "landed_cost": "Landed cost (FOB price → delivered cost)",
 }
 
@@ -113,6 +123,12 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
     a new commodity needs no UI change.
     """
     k = key_prefix
+    terms = list(DELIVERY_TERM_LEGS)
+    delivery_term = container.selectbox(
+        "Delivery term (Incoterms 2020)", terms,
+        index=terms.index(seed.get("delivery_term", "CIF")),
+        key=f"{k}term", help="\n\n".join(f"**{t}**: {h}"
+                                          for t, h in DELIVERY_TERM_HELP.items()))
     quantity = container.number_input(
         f"Quantity ({profile.unit})", min_value=1.0,
         value=float(seed["quantity"]), step=1000.0, key=f"{k}quantity")
@@ -120,8 +136,10 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
         f"Base price (USD/{profile.unit})", min_value=0.01,
         value=float(seed["price_basis"]), key=f"{k}price")
 
+    freight_unit = ("wmt, converted to dry with cargo moisture"
+                    if profile.freight_moisture_key else profile.unit)
     freight = container.number_input(
-        f"Freight rate (USD/{profile.unit})", min_value=0.0,
+        f"Freight rate (USD/{freight_unit})", min_value=0.0,
         value=float(seed["freight_rate_per_unit"]), key=f"{k}freight")
     insurance = container.number_input(
         "Insurance rate (% of insured value)", min_value=0.0,
@@ -166,6 +184,7 @@ def cost_inputs_form(profile: CommodityProfile, seed: dict[str, Any], container,
         discharge_port_fee_per_unit=discharge_fee,
         actual_quality=actual_quality,
         commission_pct=commission,
+        delivery_term=delivery_term,
     )
 
 

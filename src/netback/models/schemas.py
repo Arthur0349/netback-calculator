@@ -8,11 +8,30 @@ Conventions used throughout the engine:
   and for trader comparisons across routes.
 - All ``*_pct`` fields are expressed in percent, not fractions:
   ``insurance_rate_pct = 0.4`` means 0.4 %.
+- ``delivery_term`` is the Incoterm of the delivered price (the sale price in
+  netback mode, the delivered cost being built in landed-cost mode). It
+  decides which cost legs sit between FOB and that price; see
+  ``DELIVERY_TERM_LEGS``.
 """
 
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+DeliveryTerm = Literal["CFR", "CIF", "DAP", "DPU"]
+
+# Which seller-side legs sit between FOB and each delivered term
+# (Incoterms 2020). Freight is in all of them. Insurance: CFR leaves it to the
+# buyer; CIF obliges the seller to insure; under DAP/DPU the seller carries
+# the transit risk, so it insures for its own account. Discharge handling is
+# the buyer's under CFR/CIF/DAP and only the seller's under DPU (delivered
+# *unloaded*).
+DELIVERY_TERM_LEGS: dict[str, dict[str, bool]] = {
+    "CFR": {"insurance": False, "discharge_port": False},
+    "CIF": {"insurance": True, "discharge_port": False},
+    "DAP": {"insurance": True, "discharge_port": False},
+    "DPU": {"insurance": True, "discharge_port": True},
+}
 
 
 class CommodityProfile(BaseModel):
@@ -25,6 +44,10 @@ class CommodityProfile(BaseModel):
     quality_adjustment_fn: str      # key into the quality-adjustment registry
     quality_params: dict[str, float] = Field(default_factory=dict)
     # parameters for the adjustment function, e.g. {"price_per_unit_alumina": 1.5}
+    freight_moisture_key: str | None = None
+    # When set, freight is quoted per WET tonne (dry bulk convention) while
+    # the commodity is priced per dry tonne: the engine converts the rate
+    # with the moisture % found under this key in ``actual_quality``.
 
 
 class Route(BaseModel):
@@ -46,6 +69,7 @@ class CostInputs(BaseModel):
     discharge_port_fee_per_unit: float = Field(ge=0)
     actual_quality: dict[str, float]        # measured quality of the cargo
     commission_pct: float = Field(default=0.0, ge=0)
+    delivery_term: DeliveryTerm = "CIF"
 
 
 class NetbackResult(BaseModel):
@@ -53,8 +77,9 @@ class NetbackResult(BaseModel):
     ``quality_adjustment`` keeps its sign (premium > 0, penalty < 0)."""
 
     mode: Literal["netback", "landed_cost"]
+    delivery_term: DeliveryTerm
     base_price: float
-    freight_cost: float
+    freight_cost: float                     # $/dry unit when freight is quoted wet
     insurance_cost: float
     financing_cost: float
     port_fees_total: float

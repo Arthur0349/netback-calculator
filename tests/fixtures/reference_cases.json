@@ -1,11 +1,17 @@
 {
-  "_comment": "Hand-computed reference cases for the integration test. All prices in USD per dmt. Bauxite Guinea -> China, Capesize. Expected values verified by hand to 2 dp.",
+  "_comment": "Hand-computed reference cases for the integration test. All prices in USD per dmt. Bauxite Guinea -> China, Capesize, CIF delivery term (no discharge fees: unloading is the buyer's). Netback: 75 - 22 - 75*1.10*0.4% (0.33) - 75*6%/365*65 (0.801370) - load fee 2.5 - 0.375 - 5 = 43.993630. Landed: 60 + 22 + (60+22)*1.10*0.4% (0.3608) + 60*6%/365*65 (0.641096) + 0.3 - 5 = 78.301896 (no port fees: FOB includes loading).",
   "profile": {
     "name": "Bauxite",
     "unit": "dmt",
-    "benchmark_spec": {"Al2O3": 49.0, "SiO2": 5.0},
+    "benchmark_spec": {
+      "Al2O3": 49.0,
+      "SiO2": 5.0
+    },
     "quality_adjustment_fn": "bauxite_linear",
-    "quality_params": {"price_per_unit_alumina": 1.5, "penalty_per_unit_silica": 2.0}
+    "quality_params": {
+      "price_per_unit_alumina": 1.5,
+      "penalty_per_unit_silica": 2.0
+    }
   },
   "route": {
     "load_port": "Kamsar",
@@ -24,17 +30,21 @@
       "payment_terms_days": 30,
       "load_port_fee_per_unit": 2.5,
       "discharge_port_fee_per_unit": 3.0,
-      "actual_quality": {"Al2O3": 47.0, "SiO2": 6.0},
-      "commission_pct": 0.5
+      "actual_quality": {
+        "Al2O3": 47.0,
+        "SiO2": 6.0
+      },
+      "commission_pct": 0.5,
+      "delivery_term": "CIF"
     },
     "expected": {
       "freight_cost": 22.0,
-      "insurance_cost": 0.4268,
+      "insurance_cost": 0.33,
       "financing_cost": 0.8014,
-      "port_fees_total": 5.5,
+      "port_fees_total": 2.5,
       "commission_cost": 0.375,
       "quality_adjustment": -5.0,
-      "result_price": 40.9
+      "result_price": 43.9936
     }
   },
   "landed_cost_case": {
@@ -47,11 +57,15 @@
       "payment_terms_days": 30,
       "load_port_fee_per_unit": 2.5,
       "discharge_port_fee_per_unit": 3.0,
-      "actual_quality": {"Al2O3": 47.0, "SiO2": 6.0},
-      "commission_pct": 0.5
+      "actual_quality": {
+        "Al2O3": 47.0,
+        "SiO2": 6.0
+      },
+      "commission_pct": 0.5,
+      "delivery_term": "CIF"
     },
     "expected": {
-      "result_price": 83.8
+      "result_price": 78.3019
     }
   }
 }

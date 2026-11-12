@@ -1,15 +1,19 @@
 """Marine cargo insurance. Standard market convention (Institute Cargo
-Clauses): the insured value is 110 % of the CIF value."""
+Clauses): the insured value is 110 % of the CIF value.
+
+The caller supplies the CIF value, because what it is depends on the
+direction of the calculation: in landed-cost mode it is built up as FOB +
+freight; in netback mode the sale price already *is* the CIF value (adding
+freight on top of it again would count freight twice).
+"""
 
 INSURED_VALUE_FACTOR = 1.10
 
 
-def insurance_cost(base_price: float, freight_cost: float,
-                   insurance_rate_pct: float) -> float:
-    """Insurance cost on the same basis (per-unit or total) as its inputs.
+def insurance_cost(cif_value: float, insurance_rate_pct: float) -> float:
+    """Insurance cost on the same basis (per-unit or total) as ``cif_value``.
 
-    insured_value = (base_price + freight_cost) x 1.10
+    insured_value = cif_value x 1.10
     insurance_cost = insured_value x insurance_rate_pct / 100
     """
-    insured_value = (base_price + freight_cost) * INSURED_VALUE_FACTOR
-    return insured_value * insurance_rate_pct / 100.0
+    return cif_value * INSURED_VALUE_FACTOR * insurance_rate_pct / 100.0

@@ -127,4 +127,5 @@ class StaticDataProvider(PriceDataProvider):
             discharge_port_fee_per_unit=self.get_port_fee(route.discharge_port, "discharge"),
             actual_quality=dict(defaults["actual_quality"]),
             commission_pct=defaults["commission_pct"],
+            delivery_term=defaults.get("delivery_term", "CIF"),
         )

@@ -31,7 +31,8 @@ with st.sidebar:
 
 st.title(f"{profile.name} — "
          f"{'netback' if mode == 'netback' else 'landed cost'}")
-st.caption(f"{route.load_port} → {route.discharge_port} · "
+st.caption(f"{inputs.delivery_term} {route.discharge_port} · "
+           f"{route.load_port} → {route.discharge_port} · "
            f"{route.vessel_type} · {route.transit_days:g} days transit · "
            f"{inputs.quantity:,.0f} {profile.unit}")
 

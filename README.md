@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Netback and landed-cost engine for physical commodity trades**, wrapped in a
-dark trading-terminal Streamlit app. From a delivered sale price (CIF/DES/DAP)
+dark trading-terminal Streamlit app. From a delivered sale price (CFR/CIF/DAP/DPU)
 it works backward to the FOB netback at the load port — freight, insurance,
 financing, port fees and quality adjustments deducted leg by leg — or forward
 from a FOB price to the delivered cost for a buyer. One engine, two directions:
@@ -32,8 +32,9 @@ The engine knows nothing about any specific commodity. Each commodity is a
 **configuration profile** — unit, benchmark spec, quality-adjustment formula
 name and parameters — injected into the engine at run time:
 
-- **Iron ore fines** (Guinea → China/Europe, Capesize) and **crude oil**
-  (Arabian Gulf → Asia/Europe, VLCC/Suezmax) ship fully built: routes,
+- **Iron ore fines** (Guinea → China/Europe, Capesize, CFR), **bauxite**
+  (Kamsar → Yantai, Capesize, CIF) and **crude oil** (Arabian Gulf →
+  Asia/Europe, VLCC/Suezmax) ship fully built: routes,
   indicative freight, port fees, benchmark prices, quality escalators.
 - **Spodumene concentrate** ships as a config-only skeleton: a valid profile
   reusing an already-registered adjustment formula, with no routes or defaults
@@ -87,12 +88,13 @@ pytest
 | Engine | Python 3.10+, pure functions, pydantic v2 models |
 | Data | JSON reference tables behind a `PriceDataProvider` ABC |
 | UI | Streamlit multipage app, Plotly (`go.Waterfall`) charts |
-| Quality | pytest (35 tests, hand-computed reference cases), GitHub Actions on every push |
+| Quality | pytest (46 tests, hand-computed reference cases), GitHub Actions on every push |
 
 ## Roadmap
 
 - [x] Core cost engine + tests (freight, insurance, financing, port fees, quality adjustment)
-- [x] Static data layer (iron ore, crude oil; spodumene config skeleton)
+- [x] Static data layer (iron ore, bauxite, crude oil; spodumene config skeleton)
+- [x] Incoterm-aware cost legs (CFR/CIF/DAP/DPU), wet-to-dry freight conversion
 - [x] Streamlit app: calculator, scenario comparison, methodology
 - [x] GitHub Actions CI (pytest on push)
 - [ ] Deploy to Streamlit Community Cloud

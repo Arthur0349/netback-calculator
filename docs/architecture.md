@@ -95,7 +95,9 @@ Le taux (`freight_rate_per_unit`) vient du data layer (table statique v1). Le mo
 Convention standard du marché (Institute Cargo Clauses) : la valeur assurée = 110 % de la valeur CIF.
 
 ```
-insured_value = (base_price + freight_cost) × 1.10
+insured_value = cif_value × 1.10
+# cif_value = FOB + fret en mode landed cost ; = prix de vente (net du
+# déchargement en DPU) en mode netback, où le fret est déjà dans le prix
 insurance_cost = insured_value × insurance_rate_pct
 ```
 

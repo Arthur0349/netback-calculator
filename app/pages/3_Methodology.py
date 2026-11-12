@@ -19,11 +19,23 @@ percent, not fractions (`0.35` means 0.35 %).
 
 ## Netback vs landed cost
 
-Both modes share the same cost legs; only the sign flips:
+Both modes share the same cost legs; the **mode** decides their sign and the
+**delivery term** (Incoterms 2020) decides which legs apply:
 
-$$\text{FOB netback} = P_{CIF} - F - I - C_{fin} - C_{port} - C_{comm} + Q$$
+$$\text{FOB netback} = P_{del} - F - I - C_{fin} - C_{port} - C_{comm} + Q$$
 
 $$\text{Landed cost} = P_{FOB} + F + I + C_{fin} + C_{port} + C_{comm} + Q$$
+
+| Delivery term | Freight | Insurance | Discharge port fees |
+|---|---|---|---|
+| CFR | ✓ | buyer | buyer |
+| CIF | ✓ | ✓ | buyer |
+| DAP | ✓ | ✓ (seller carries transit risk) | buyer |
+| DPU | ✓ | ✓ | ✓ |
+
+**Load port fees** are a seller cost below FOB: they are deducted in netback
+mode (the netback is the seller's realisation net of loading) and never added
+in landed-cost mode (a FOB price already includes loading).
 
 The quality adjustment $Q$ keeps its own sign in both directions: a premium
 cargo has a higher netback *and* a higher delivered value.
@@ -33,16 +45,27 @@ cargo has a higher netback *and* a higher delivered value.
 $$F = \text{freight rate (USD/unit)}$$
 
 The rate itself comes from the data layer (static reference table today, a
-live source such as the Baltic Exchange later). The engine only applies it —
+live source such as the Baltic Exchange later). The engine only applies it:
 Worldscale conversion or vessel-size adjustments belong in the data layer,
 keeping the core auditable.
+
+**Wet vs dry tonnes.** Dry bulk freight is fixed per *wet* tonne shipped
+while ores are priced per *dry* tonne. For commodities flagged this way
+(iron ore, bauxite) the engine converts with the cargo moisture $m$:
+
+$$F_{dmt} = \frac{F_{wmt}}{1 - m/100}$$
 
 ## Insurance
 
 Standard marine cargo convention (Institute Cargo Clauses): the insured value
 is **110 % of the CIF value**.
 
-$$I = (P + F) \times 1.10 \times \frac{r_{ins}}{100}$$
+$$I = V_{CIF} \times 1.10 \times \frac{r_{ins}}{100}$$
+
+In landed-cost mode the CIF value is built up, $V_{CIF} = P_{FOB} + F$. In
+netback mode the delivered price already *is* the CIF value
+($V_{CIF} = P_{del}$, net of unloading under DPU): freight is not added a
+second time.
 
 ## Financing
 
@@ -71,6 +94,8 @@ Examples shipped:
 - **Iron ore** (linear per-unit deviations, Platts/CRU index pattern):
   premium per 1 % Fe above benchmark, penalties per 1 % silica and moisture
   above benchmark.
+- **Bauxite** (Guinea, linear): premium per 1 % Al₂O₃ both ways, penalty
+  per 1 % reactive silica above benchmark.
 - **Crude oil** (OSP-style escalators): premium per API degree above
   benchmark, penalty per 1 % sulfur above benchmark.
 - **Spodumene** (config skeleton): linear Li₂O adjustment, reusing an
@@ -84,4 +109,6 @@ Examples shipped:
   the same `PriceDataProvider` interface.
 - Demurrage/despatch, weather routing, bunker adjustment factors and FX are
   out of scope of this version.
+- Insurance uses the market shortcut on the CIF value; the exact landed
+  CIF, $(P_{FOB}+F)/(1-1.1\,r_{ins})$, differs by a few cents per tonne.
 """)

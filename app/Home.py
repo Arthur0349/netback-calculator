@@ -12,11 +12,11 @@ st.title("Netback Calculator")
 st.caption("FOB netback and landed-cost engine for bulk and tanker trades")
 
 st.markdown(
-    "From a delivered sale price (CIF/DES/DAP), work **backward** to the FOB "
+    "From a delivered sale price (CFR/CIF/DAP/DPU), work **backward** to the FOB "
     "netback at the load port: freight, insurance, financing, port fees and "
     "quality adjustments, deducted leg by leg. Or run the same engine "
-    "**forward**, FOB price to delivered cost. One engine, two directions — "
-    "only the sign of the cost legs flips."
+    "**forward**, FOB price to delivered cost. One engine, two directions: "
+    "the Incoterm decides which legs apply, the mode decides their sign."
 )
 
 st.divider()
@@ -24,7 +24,7 @@ st.divider()
 col1, col2 = st.columns(2)
 col1.markdown(theme.panel(
     "Netback · backward",
-    "CIF sale price → deductions → <b>FOB netback</b>.<br>"
+    "Delivered sale price → deductions → <b>FOB netback</b>.<br>"
     "The trader's calculation: compare several outlets, "
     "pick the most profitable one.",
 ), unsafe_allow_html=True)
@@ -40,8 +40,8 @@ st.divider()
 st.markdown(
     "The engine is **commodity-agnostic**: each commodity is a configuration "
     "profile (unit, benchmark spec, quality-adjustment formula) injected into "
-    "the engine, not hard-coded logic. Iron ore and crude oil ship fully "
-    "built; spodumene is a config-only skeleton proving that a new commodity "
+    "the engine, not hard-coded logic. Iron ore, bauxite and crude oil "
+    "ship fully built; spodumene is a config-only skeleton proving that a new commodity "
     "is a data edit, not a code change."
 )
 

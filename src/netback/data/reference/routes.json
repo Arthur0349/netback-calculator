@@ -43,5 +43,16 @@
       "vessel_type": "Suezmax"
     },
     "_sources": "Arabian Gulf -> NW Europe via Suez (laden transit)"
+  },
+  "kamsar_yantai": {
+    "commodity": "bauxite",
+    "route": {
+      "load_port": "Kamsar",
+      "discharge_port": "Yantai",
+      "distance_nm": 11000,
+      "transit_days": 35,
+      "vessel_type": "Capesize"
+    },
+    "_sources": "Guinea -> Shandong via Cape of Good Hope"
   }
 }

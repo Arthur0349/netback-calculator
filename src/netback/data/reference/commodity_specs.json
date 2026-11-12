@@ -1,26 +1,36 @@
 {
-  "_notes": "Indicative reference data for the demo. Figures are order-of-magnitude realistic (mid-2020s public index levels: Platts IODEX / Argus crude assessments / Fastmarkets spodumene), chosen for internal consistency, not day-accuracy. Live assessments are what the LiveDataProvider will supply later. '_' keys are documentation, ignored by the loader.",
+  "_notes": "Indicative reference data for the demo. Figures are order-of-magnitude realistic (mid-2020s public index levels: Platts IODEX / Argus crude assessments / Guinea bauxite CIF China / Fastmarkets spodumene), chosen for internal consistency, not day-accuracy. Live assessments are what the LiveDataProvider will supply later. '_' keys are documentation, ignored by the loader.",
   "iron_ore": {
     "profile": {
       "name": "Iron ore fines",
       "unit": "dmt",
-      "benchmark_spec": {"Fe": 65.0, "SiO2": 4.0, "moisture": 8.0},
+      "benchmark_spec": {
+        "Fe": 65.0,
+        "SiO2": 4.0,
+        "moisture": 8.0
+      },
       "quality_adjustment_fn": "iron_ore_linear",
       "quality_params": {
         "price_per_unit_fe": 1.9,
         "penalty_per_unit_silica": 1.2,
         "penalty_per_unit_moisture": 0.6
-      }
+      },
+      "freight_moisture_key": "moisture"
     },
     "benchmark_price": 108.0,
-    "benchmark_price_basis": "USD/dmt CIF Qingdao, IODEX-style 65% Fe fines index (Simandou-grade high-Fe product)",
+    "benchmark_price_basis": "USD/dmt CFR Qingdao, IODEX-style 65% Fe fines index (Simandou-grade high-Fe product)",
     "defaults": {
       "quantity": 180000,
       "insurance_rate_pct": 0.35,
       "financing_rate_annual_pct": 6.5,
       "payment_terms_days": 30,
       "commission_pct": 0.5,
-      "actual_quality": {"Fe": 65.5, "SiO2": 3.4, "moisture": 8.5}
+      "actual_quality": {
+        "Fe": 65.5,
+        "SiO2": 3.4,
+        "moisture": 8.5
+      },
+      "delivery_term": "CFR"
     },
     "_sources": "Benchmark level ~Platts IODEX 65% Fe CFR China; Fe/SiO2/moisture differentials in line with published Platts per-1%-Fe spreads. Default cargo: Capesize stem ex Morebaya (Simandou export terminal, Guinea)."
   },
@@ -28,7 +38,10 @@
     "profile": {
       "name": "Crude oil",
       "unit": "bbl",
-      "benchmark_spec": {"API": 32.0, "sulfur_pct": 1.8},
+      "benchmark_spec": {
+        "API": 32.0,
+        "sulfur_pct": 1.8
+      },
       "quality_adjustment_fn": "crude_api_sulfur",
       "quality_params": {
         "premium_per_api_degree": 0.3,
@@ -43,17 +56,58 @@
       "financing_rate_annual_pct": 6.0,
       "payment_terms_days": 30,
       "commission_pct": 0.25,
-      "actual_quality": {"API": 34.2, "sulfur_pct": 1.2}
+      "actual_quality": {
+        "API": 34.2,
+        "sulfur_pct": 1.2
+      },
+      "delivery_term": "CIF"
     },
     "_sources": "Benchmark level ~Dubai swaps; API/sulfur escalators in line with typical official-selling-price adjustment grids. Default cargo: VLCC stem ex Ras Tanura."
+  },
+  "bauxite": {
+    "profile": {
+      "name": "Bauxite (Guinea)",
+      "unit": "dmt",
+      "benchmark_spec": {
+        "Al2O3": 45.0,
+        "SiO2": 3.0,
+        "moisture": 10.0
+      },
+      "quality_adjustment_fn": "bauxite_linear",
+      "quality_params": {
+        "price_per_unit_alumina": 1.5,
+        "penalty_per_unit_silica": 2.0
+      },
+      "freight_moisture_key": "moisture"
+    },
+    "benchmark_price": 72.0,
+    "benchmark_price_basis": "USD/dmt CIF Yantai, Guinea 45% Al2O3 / 3% reactive SiO2 bauxite index level",
+    "defaults": {
+      "quantity": 180000,
+      "insurance_rate_pct": 0.35,
+      "financing_rate_annual_pct": 6.5,
+      "payment_terms_days": 30,
+      "commission_pct": 0.5,
+      "delivery_term": "CIF",
+      "actual_quality": {
+        "Al2O3": 46.0,
+        "SiO2": 2.8,
+        "moisture": 11.0
+      }
+    },
+    "_sources": "Benchmark level ~Fastmarkets/CBIX Guinea bauxite CIF China, mid-2020s range. Moisture drives the wet-to-dry freight conversion only; the bauxite_linear formula prices Al2O3 and reactive silica. Default cargo: Capesize ex Kamsar (Boke region)."
   },
   "lithium_spodumene": {
     "profile": {
       "name": "Spodumene concentrate",
       "unit": "dmt",
-      "benchmark_spec": {"Li2O": 6.0},
+      "benchmark_spec": {
+        "Li2O": 6.0
+      },
       "quality_adjustment_fn": "spodumene_linear",
-      "quality_params": {"price_per_unit_li2o": 145.0}
+      "quality_params": {
+        "price_per_unit_li2o": 145.0
+      }
     },
     "_sources": "Config skeleton only: a valid CommodityProfile reusing the already-registered spodumene_linear formula, with no benchmark price, routes, freight or defaults yet. Proves a new commodity is pure configuration — no code change."
   }
